@@ -1,0 +1,54 @@
+# ---- Python (Application) ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.Python
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables (never commit real secrets)
+.env
+.env.local
+*.env
+!.env.example
+
+# Databases
+*.db
+*.sqlite3
+
+# Uploaded resumes & generated PDF reports (runtime data)
+Application/ResumeAnalyzer_v1/uploads/*
+!Application/ResumeAnalyzer_v1/uploads/.gitkeep
+Application/ResumeAnalyzer_v1/reports/*
+!Application/ResumeAnalyzer_v1/reports/.gitkeep
+
+# ---- Java / Maven (Automation) ----
+Automation/target/
+Automation/test-output/
+Automation/reports/*
+!Automation/reports/.gitkeep
+Automation/screenshots/*
+!Automation/screenshots/.gitkeep
+*.class
+
+# ---- IDE / editor metadata ----
+.project
+.classpath
+.settings/
+.idea/
+*.iml
+.vscode/
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log

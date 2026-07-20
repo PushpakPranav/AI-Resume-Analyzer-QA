@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block extra_css %}
+{% endblock %}
+{% block content %}
+<div class="container py-5" id="dashboard-page">
+{% if delete_message %}
+  <div id="delete-message-alert" class="alert alert-{{ delete_message.type }} alert-dismissible fade show" role="alert">
+    {{ delete_message.text }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
+  <!-- Welcome -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h4 class="fw-bold mb-0">
+  {% if current_user.avatar and current_user.avatar.startswith('/') %}
+    <img id="user-avatar-img" src="{{ current_user.avatar }}"
+         style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #4f46e5;vertical-align:middle;"
+         alt="avatar">
+  {% else %}
+    <div id="user-avatar-initial" style="width:38px;height:38px;border-radius:50%;background:#4f46e5;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:white;vertical-align:middle;flex-shrink:0;">
+      {{ current_user.name[0].upper() if current_user.name else 'U' }}
+    </div>
+    </h4>
+  {% endif %}
+
+  <h4 id="welcome-text" class="welcome-text">Welcome, {{ current_user.name }}!</h4>
+
+      <p class="text-muted mb-0">Track your resume scores &amp; improvement over time</p>
+    </div>
+    <a href="/" id="upload-new-resume-btn" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Upload New Resume</a>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card" id="stat-total-resumes" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+        <div class="stat-num" id="stat-total-resumes-value">{{ total }}</div>
+        <div class="stat-label"><i class="bi bi-files me-1"></i>Resumes Uploaded</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card" id="stat-avg-score" style="background:linear-gradient(135deg,#0d9488,#059669);">
+        <div class="stat-num" id="stat-avg-score-value">{{ avg_score }}%</div>
+        <div class="stat-label"><i class="bi bi-graph-up me-1"></i>Avg ATS Score</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card" id="stat-best-score" style="background:linear-gradient(135deg,#d97706,#f59e0b);">
+        <div class="stat-num" id="stat-best-score-value">{{ best.ats_score if best else 0 }}%</div>
+        <div class="stat-label"><i class="bi bi-trophy me-1"></i>Best Score</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card" id="stat-domains-tried" style="background:linear-gradient(135deg,#dc2626,#f87171);">
+        <div class="stat-num" id="stat-domains-tried-value">{{ domains | length }}</div>
+        <div class="stat-label"><i class="bi bi-diagram-3 me-1"></i>Domains Tried</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Score History Chart -->
+    {% if history_labels %}
+    <div class="col-lg-7">
+      <div class="card p-4" id="score-history-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i>Score History</h6>
+        <canvas id="scoreChart" height="200"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Domains -->
+    <div class="col-lg-5">
+      <div class="card p-4 h-100" id="domains-detected-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2 text-teal"></i>Domains Detected</h6>
+        {% if domains %}
+          <div id="domains-badge-list">
+          {% for d in domains %}<span class="domain-badge me-1 mb-2 d-inline-block" id="domain-badge-{{ loop.index0 }}">{{ d }}</span>{% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted small" id="no-domains-message">Upload a resume to see domain detection</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Resume List -->
+    <div class="col-12">
+      <div class="card p-4" id="resume-history-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Resume History</h6>
+        {% if resumes %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="resume-history-table">
+            <thead style="font-size:.85rem;color:var(--muted);">
+              <tr>
+                <th>Filename</th><th>Domain</th><th>ATS Score</th><th>Grade</th><th>Uploaded</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="resume-history-tbody">
+              {% for r in resumes %}
+              <tr id="resume-row-{{ r.id }}" data-resume-id="{{ r.id }}">
+                <td id="resume-filename-{{ r.id }}"><i class="bi bi-file-earmark-text me-2 text-primary"></i>{{ r.filename }}</td>
+                <td id="resume-domain-{{ r.id }}"><span class="domain-badge" style="font-size:.75rem;">{{ r.detected_domain }}</span></td>
+                <td id="resume-score-{{ r.id }}">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:8px;border-radius:4px;min-width:80px;">
+                      <div class="progress-bar {% if r.ats_score >= 75 %}bg-success{% elif r.ats_score >= 50 %}bg-primary{% elif r.ats_score >= 25 %}bg-warning{% else %}bg-danger{% endif %}"
+                        style="width:{{ r.ats_score }}%;"></div>
+                    </div>
+                    <span class="fw-bold" style="font-size:.9rem;">{{ r.ats_score }}%</span>
+                  </div>
+                </td>
+                <td id="resume-grade-{{ r.id }}"><span class="skill-pill {% if r.grade == 'Excellent' %}pill-green{% elif r.grade == 'Good' %}pill-blue{% elif r.grade == 'Average' %}pill-blue{% else %}pill-red{% endif %}">{{ r.grade }}</span></td>
+                <td id="resume-uploaded-{{ r.id }}" style="font-size:.85rem;color:var(--muted);">{{ r.uploaded_at.strftime('%d %b %Y') }}</td>
+                <td id="resume-actions-{{ r.id }}">
+                  <a href="/analysis/history/{{ r.id }}" id="resume-history-btn-{{ r.id }}" class="btn btn-sm btn-outline-primary me-1" style="border-radius:8px;font-size:.78rem;">
+                    <i class="bi bi-clock-history"></i> History
+                  </a>
+                  <form action="/resume/delete/{{ r.id }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Delete this resume?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" id="resume-delete-btn-{{ r.id }}" class="btn btn-sm btn-outline-danger" style="border-radius:8px;font-size:.78rem;">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" id="no-resumes-empty-state">
+          <div style="font-size:3rem;">📂</div>
+          <p class="text-muted mt-2">No resumes uploaded yet.</p>
+          <a href="/" class="btn btn-primary mt-2" id="upload-first-resume-btn">Upload Your First Resume</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+{% if history_labels %}
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)';
+new Chart(document.getElementById('scoreChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ history_labels | tojson }},
+    datasets: [{
+      label: 'ATS Score %',
+      data: {{ history_scores | tojson }},
+      backgroundColor: {{ history_scores | tojson }}.map(s =>
+        s >= 75 ? '#059669' : s >= 50 ? '#4f46e5' : s >= 25 ? '#d97706' : '#dc2626'
+      ),
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, max: 100,
+           grid: { color: gridColor },
+           ticks: { callback: v => v + '%' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

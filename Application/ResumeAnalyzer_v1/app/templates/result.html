@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}ATS Result{% endblock %}
+{% block content %}
+<div class="container py-5" id="ats-result-page">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <!-- ATS Score Card -->
+      <div class="card p-4 mb-4" id="ats-score-card">
+        <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+          <div>
+            <h5 class="fw-bold mb-1"><i class="bi bi-speedometer2 me-2 text-primary"></i>ATS Score</h5>
+            <small class="text-muted">Auto-analyzed for your domain</small>
+          </div>
+          <span class="badge rounded-pill bg-light text-dark border" id="resume-filename-badge"><i class="bi bi-file-earmark-text me-1"></i>{{ filename }}</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-4 flex-wrap mb-3">
+          <div class="score-circle {{ grade | lower }}" id="ats-score-circle">
+            <span id="ats-score-value">{{ ats_score }}%</span>
+            <small style="font-size:.7rem;font-weight:500;opacity:.9;" id="ats-grade-value">{{ grade }}</small>
+          </div>
+          <div class="flex-grow-1">
+            <span class="domain-badge mb-2 d-inline-block" id="detected-domain-badge"><i class="bi bi-search me-1"></i>{{ detected_domain }}</span>
+            <div class="d-flex gap-4 mb-2">
+              <div><div class="fw-bold text-success fs-5" id="ats-matched-count">{{ ats_matched | length }}</div><div class="text-muted" style="font-size:.8rem;">Matched</div></div>
+              <div><div class="fw-bold text-danger fs-5" id="ats-missing-count">{{ ats_missing | length }}</div><div class="text-muted" style="font-size:.8rem;">Missing</div></div>
+            </div>
+            <div class="progress" style="height:12px;border-radius:8px;" id="ats-score-progress">
+              <div class="progress-bar bg-{{ grade_color }}" id="ats-score-progress-bar" style="width: {{ ats_score }} %;border-radius:8px; "></div>
+            </div>
+          </div>
+        </div>
+
+        {% if summary %}
+        <div class="mb-3 p-3" id="ai-summary-block" style="border-radius:10px;background:var(--bg);border-left:4px solid #0d9488;">
+          <p class="text-muted small fw-semibold mb-1"><i class="bi bi-robot me-1"></i>AI SUMMARY</p>
+          <p style="font-size:.9rem;margin:0;" id="ai-summary-text">{{ summary }}</p>
+        </div>
+        {% endif %}
+        {% if ats_matched %}
+        <div class="mb-2" id="ats-matched-skills-block">
+          <p class="text-muted small fw-semibold mb-1">✅ MATCHED SKILLS</p>
+          {% for s in ats_matched %}<span class="skill-pill pill-green" id="ats-matched-skill-{{ loop.index0 }}">{{ s }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if ats_missing %}
+        <div id="ats-missing-skills-block">
+          <p class="text-muted small fw-semibold mb-1 mt-2">❌ TOP MISSING SKILLS</p>
+          {% for s in ats_missing %}<span class="skill-pill pill-red" id="ats-missing-skill-{{ loop.index0 }}">{{ s }}</span>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- JD Match Form -->
+      <div class="card p-4" id="jd-match-form-card">
+        <h5 class="fw-bold mb-1"><i class="bi bi-file-text me-2 text-teal"></i>Match Against Job Description</h5>
+        <p class="text-muted small mb-3">Paste any JD to get match % + skill roadmap + AI rewriting tips</p>
+        {% if error %}<div class="alert alert-danger py-2" id="jd-error-alert">{{ error }}</div>{% endif %}
+        <form action="/analysis/match" method="post" id="jd-form">
+          <input type="hidden" name="resume_id" value="{{ resume_id }}" id="jd-resume-id-input">
+          <textarea class="form-control mb-3" name="job_description" id="jd-textarea" rows="9"
+            placeholder="Paste the full job description here..." required
+            style="border-radius:10px;font-size:.9rem;resize:vertical;"></textarea>
+          <div class="d-flex gap-3 flex-wrap">
+            <button type="submit" class="btn btn-primary" id="jd-btn">
+              <i class="bi bi-arrow-right-circle me-2"></i>Analyze Match
+            </button>
+            <a href="/" class="btn btn-outline-secondary" id="upload-another-link" style="border-radius:10px;">← Upload Another</a>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('jd-form').addEventListener('submit',function(e){
+  const jdText = document.querySelector('textarea[name="job_description"]').value;
+  if (!jdText.trim()) {
+    e.preventDefault();
+    alert('Job description cannot be empty or contain only spaces.');
+    return;
+  }
+  const b=document.getElementById('jd-btn');
+  b.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+  b.disabled=true;
+});
+</script>
+{% endblock %}

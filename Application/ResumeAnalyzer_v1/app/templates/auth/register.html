@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card p-4">
+        <div class="text-center mb-4">
+          <div style="font-size:2.5rem;">✨</div>
+          <h4 class="fw-bold mt-2 mb-0">Create Account</h4>
+          <p class="text-muted small">Free forever — no credit card needed</p>
+        </div>
+        {% if error %}<div class="alert alert-danger py-2">{{ error }}</div>{% endif %}
+        <form method="post" action="/auth/register">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="Pushpak Pranav" required style="border-radius:10px;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control" placeholder="you@email.com" required style="border-radius:10px;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+            <input type="password" name="password" id="password" class="form-control" placeholder="Min. 8 characters" required style="border-radius:10px;">
+            <small class="text-muted d-block mt-1" style="font-size:.78rem;">
+              Must be 8+ characters with at least 1 uppercase, 1 lowercase, 1 number, and 1 special character
+            </small>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Create Account</button>
+        </form>
+        <p class="text-center text-muted small mt-3 mb-0">
+          Already have an account? <a href="/auth/login" class="text-primary fw-semibold">Login</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelector('form[action="/auth/register"]').addEventListener('submit', function(e) {
+  const pwd = document.getElementById('password').value;
+  const rules = [
+    [/.{8,}/, 'Password must contain at least 8 characters'],
+    [/[A-Z]/, 'Password must contain at least one uppercase letter'],
+    [/[a-z]/, 'Password must contain at least one lowercase letter'],
+    [/[0-9]/, 'Password must contain at least one number'],
+    [/[^A-Za-z0-9]/, 'Password must contain at least one special character'],
+  ];
+  for (const [regex, msg] of rules) {
+    if (!regex.test(pwd)) {
+      e.preventDefault();
+      alert(msg);
+      return;
+    }
+  }
+});
+</script>
+{% endblock %}

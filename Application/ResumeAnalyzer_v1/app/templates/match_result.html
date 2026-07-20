@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Match Result{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <!-- Match Score Card -->
+      <div class="card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h5 class="fw-bold mb-0"><i class="bi bi-bullseye me-2 text-primary"></i>JD Match Result</h5>
+          <a href="/analysis/report/{{ analysis_id }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-download me-1"></i>Download PDF Report
+          </a>
+        </div>
+
+        <div class="d-flex align-items-center gap-4 flex-wrap mb-3">
+          <div class="score-circle {% if match_percentage >= 75 %}excellent{% elif match_percentage >= 50 %}good{% elif match_percentage >= 25 %}average{% else %}poor{% endif %}">
+            <span>{{ match_percentage }}%</span>
+            <small style="font-size:.7rem;opacity:.9;">Match</small>
+          </div>
+          <div class="flex-grow-1">
+            <span class="badge rounded-pill bg-light text-dark border mb-2">
+              <i class="bi bi-file-earmark me-1"></i>{{ filename }}
+            </span>
+            {% if detected_domain %}
+            <span class="domain-badge ms-2 mb-2 d-inline-block">
+              <i class="bi bi-search me-1"></i>{{ detected_domain }}
+            </span>
+            {% endif %}
+            <div class="progress mb-1" style="height:10px;border-radius:8px;">
+              <div class="progress-bar {% if match_percentage >= 75 %}bg-success{% elif match_percentage >= 50 %}bg-primary{% elif match_percentage >= 25 %}bg-warning{% else %}bg-danger{% endif %}"
+                style="width:{{ match_percentage }}%;border-radius:8px;"></div>
+            </div>
+            <small class="text-muted">{{ matched_skills|length }} matched · {{ missing_skills|length }} missing from JD</small>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <p class="text-muted small fw-semibold mb-1">✅ MATCHED SKILLS</p>
+            {% for s in matched_skills %}<span class="skill-pill pill-green">{{ s }}</span>
+            {% else %}<span class="text-muted small">None found</span>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <p class="text-muted small fw-semibold mb-1">❌ MISSING SKILLS</p>
+            {% for s in missing_skills %}<span class="skill-pill pill-red">{{ s }}</span>
+            {% else %}<span class="text-muted small">None — great match! 🎉</span>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Feedback -->
+      {% if feedback %}
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-robot me-2 text-primary"></i>AI Analysis Feedback</h5>
+        {% for f in feedback %}
+        <div class="mb-2 p-3" style="border-radius:10px;background:var(--bg);border-left:4px solid #4f46e5;">
+          <span style="font-size:.92rem;">{{ f }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Skill Roadmap -->
+      {% if roadmap %}
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-map me-2 text-success"></i>AI Skill Roadmap</h5>
+        <p class="text-muted small mb-3">Personalized learning path for your missing skills</p>
+        {% for item in roadmap %}
+        <div class="roadmap-card">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <span class="fw-bold">{{ item.skill | title }}</span>
+              <span class="priority-{{ item.priority | lower }} ms-2">{{ item.priority }} Priority</span>
+              {% if item.platform %}
+              <span class="text-muted small ms-2">via {{ item.platform }}</span>
+              {% endif %}
+            </div>
+            <a href="{{ item.course_url }}" target="_blank" class="btn btn-sm btn-outline-primary" style="border-radius:8px;">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Start Course
+            </a>
+          </div>
+          <div class="mt-1 text-muted small"><i class="bi bi-play-circle me-1"></i>{{ item.course }}</div>
+          {% if item.cert %}
+          <div class="mt-1"><span class="skill-pill pill-blue"><i class="bi bi-award me-1"></i>{{ item.cert }}</span></div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- AI Rewriter -->
+      {% if rewrites %}
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-magic me-2" style="color:#7c3aed;"></i>AI Resume Rewriter</h5>
+        <p class="text-muted small mb-3">System detected weak bullet points — here are stronger AI-rewritten versions</p>
+        {% for rw in rewrites %}
+        <div class="mb-3 p-3" style="border-radius:10px;background:var(--bg);">
+          <div class="text-muted small mb-1"><i class="bi bi-x-circle text-danger me-1"></i><strong>Original:</strong></div>
+          <div class="mb-2" style="font-size:.9rem;">{{ rw.original }}</div>
+          <div class="text-muted small mb-1"><i class="bi bi-check-circle text-success me-1"></i><strong>AI Improved:</strong></div>
+          <div style="font-size:.9rem;color:#059669;font-weight:500;">{{ rw.improved }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Suggestions -->
+      {% if suggestions %}
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb me-2 text-warning"></i>Quick Improvement Tips</h5>
+        <ul class="mb-0" style="padding-left:1.2rem;">
+          {% for tip in suggestions %}
+          <li class="mb-2" style="font-size:.9rem;">{{ tip }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-3 flex-wrap">
+        <a href="/" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Analyze Another Resume</a>
+        {% if current_user %}<a href="/dashboard" class="btn btn-outline-primary">View Dashboard</a>{% endif %}
+        <a href="/analysis/report/{{ analysis_id }}" class="btn btn-outline-success">
+          <i class="bi bi-file-earmark-pdf me-2"></i>Download Full Report
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

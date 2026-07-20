@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+
+<section style="background:linear-gradient(135deg,#4f46e5 0%,#0d9488 100%);padding:70px 0 60px;">
+  <div class="container text-center text-white">
+    <div style="font-size:3.5rem;margin-bottom:12px;">🎯</div>
+    <h1 class="fw-800 mb-2" style="font-size:2.4rem;font-weight:800;">AI-Powered Resume Analyzer</h1>
+    <p class="mb-4" style="font-size:1.1rem;opacity:.9;max-width:560px;margin:0 auto 28px;">
+      Upload your resume — get instant ATS Score, domain detection, skill gap analysis, roadmap &amp; AI rewriting suggestions.
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <span class="badge rounded-pill bg-white text-dark px-3 py-2"><i class="bi bi-check-circle-fill text-success me-1"></i>15+ Domains</span>
+      <span class="badge rounded-pill bg-white text-dark px-3 py-2"><i class="bi bi-check-circle-fill text-success me-1"></i>PDF &amp; DOCX</span>
+      <span class="badge rounded-pill bg-white text-dark px-3 py-2"><i class="bi bi-check-circle-fill text-success me-1"></i>Skill Roadmap</span>
+      <span class="badge rounded-pill bg-white text-dark px-3 py-2"><i class="bi bi-check-circle-fill text-success me-1"></i>Dark Mode</span>
+    </div>
+  </div>
+</section>
+
+<!-- Upload Card -->
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-1"><i class="bi bi-upload me-2 text-primary"></i>Upload Your Resume</h5>
+        <p class="text-muted small mb-3">PDF or DOCX · Max 5MB</p>
+        {% if error %}<div class="alert alert-danger py-2" id="upload-error">{{ error }}</div>{% endif %}
+        <form action="/resume/upload" method="post" enctype="multipart/form-data" id="upload-form">
+          <div id="drop-zone" style="border:2px dashed #4f46e5;border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:background .2s;" onclick="document.getElementById('file-input').click()">
+            <div style="font-size:2.5rem;margin-bottom:8px;">📄</div>
+            <p class="mb-1 fw-semibold">Drag &amp; drop or click to browse</p>
+            <p class="text-muted small mb-0">Supports PDF and DOCX</p>
+            <p id="file-name" class="text-primary fw-semibold mt-2 mb-0" style="display:none;"></p>
+          </div>
+          <input type="file" id="file-input" name="file" accept=".pdf,.docx" style="display:none" onchange="showFile(this)">
+          <button type="submit" class="btn btn-primary w-100 mt-3" id="submit-btn" disabled>
+            <i class="bi bi-cpu me-2"></i>Analyze Resume
+          </button>
+        </form>
+      </div>
+
+      <!-- How it works -->
+      <div class="card p-4 mt-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-teal"></i>How It Works</h6>
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-weight:700;color:#4f46e5;flex-shrink:0;">1</div>
+          <div><strong>Upload Resume</strong><br><small class="text-muted">PDF or DOCX format</small></div>
+        </div>
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-weight:700;color:#059669;flex-shrink:0;">2</div>
+          <div><strong>Auto Domain Detection</strong><br><small class="text-muted">AI detects your field from 15+ domains</small></div>
+        </div>
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-weight:700;color:#d97706;flex-shrink:0;">3</div>
+          <div><strong>ATS Score + Skill Gap</strong><br><small class="text-muted">See matched &amp; missing skills instantly</small></div>
+        </div>
+        <div class="d-flex gap-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;color:#1e40af;flex-shrink:0;">4</div>
+          <div><strong>Paste JD → Match %</strong><br><small class="text-muted">Compare against any job description</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const dz = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const submitBtn = document.getElementById('submit-btn');
+const fileNameEl = document.getElementById('file-name');
+const uploadErrorEl = document.getElementById('upload-error');
+
+function hideServerError() {
+  if (uploadErrorEl) uploadErrorEl.style.display = 'none';
+}
+
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+const ALLOWED_EXT = ['.pdf', '.docx'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+function isValidFile(file) {
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  return ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
+}
+
+function isValidSize(file) {
+  return file.size <= MAX_FILE_SIZE;
+}
+
+function showError(msg) {
+  fileNameEl.textContent = '❌ ' + msg;
+  fileNameEl.style.display = 'block';
+  fileNameEl.style.color = 'red';
+  submitBtn.disabled = true;
+}
+
+function showSuccess(name) {
+  fileNameEl.textContent = '✅ ' + name;
+  fileNameEl.style.display = 'block';
+  fileNameEl.style.color = '';
+  submitBtn.disabled = false;
+}
+
+dz.addEventListener('dragover', e => {
+  e.preventDefault();
+  dz.style.background = '#ede9fe';
+});
+
+dz.addEventListener('dragleave', () => {
+  dz.style.background = '';
+});
+
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.style.background = '';
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    hideServerError();
+    if (!isValidFile(f)) {
+      showError('Only PDF and DOCX files are allowed');
+      fileInput.value = '';
+      return;
+    }
+    if (!isValidSize(f)) {
+      showError('File size must not exceed 5 MB.');
+      fileInput.value = '';
+      return;
+    }
+    fileInput.files = e.dataTransfer.files;
+    showSuccess(f.name);
+  }
+});
+
+function showFile(input) {
+  const f = input.files[0];
+  hideServerError();
+  if (f) {
+    if (!isValidFile(f)) {
+      showError('Only PDF and DOCX files are allowed');
+      fileInput.value = '';
+      return;
+    }
+    if (!isValidSize(f)) {
+      showError('File size must not exceed 5 MB.');
+      fileInput.value = '';
+      return;
+    }
+    showSuccess(f.name);
+  } else {
+    submitBtn.disabled = true;
+    fileNameEl.style.display = 'none';
+  }
+}
+
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+  const f = fileInput.files[0];
+  if (!f) {
+    e.preventDefault();
+    showError('Please select a file before submitting.');
+    return;
+  }
+  if (!isValidFile(f)) {
+    e.preventDefault();
+    showError('Only PDF and DOCX files are allowed');
+    return;
+  }
+  if (!isValidSize(f)) {
+    e.preventDefault();
+    showError('File size must not exceed 5 MB.');
+    return;
+  }
+  submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+  submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card p-4">
+        <div class="text-center mb-4">
+          <div style="font-size:2.5rem;">🔐</div>
+          <h4 class="fw-bold mt-2 mb-0">Welcome Back</h4>
+          <p class="text-muted small">Login to access your dashboard</p>
+        </div>
+        {% if message %}<div class="alert alert-success py-2">{{ message }}</div>{% endif %}
+        <div id="login-error-box" class="alert alert-danger py-2 {% if not error %}d-none{% endif %}">{{ error or '' }}</div>
+        <form method="post" action="/auth/login" id="login-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="email" class="form-control" placeholder="you@email.com" required style="border-radius:10px;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold d-flex justify-content-between">
+              <span>Password</span>
+              <a href="/auth/forgot-password" class="text-primary fw-semibold" style="font-size:.82rem;">Forgot password?</a>
+            </label>
+            <input type="password" name="password" class="form-control" placeholder="••••••••" required style="border-radius:10px;">
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mt-1" id="login-submit-btn">Login</button>
+        </form>
+        <p class="text-center text-muted small mt-3 mb-0">
+          Don't have an account? <a href="/auth/register" class="text-primary fw-semibold">Sign Up</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Bug fix: submitted via fetch instead of a normal form POST. A failed
+// attempt only updates this page in place — the browser never navigates,
+// so no new history entry is created no matter how many attempts are
+// made. Back always goes straight to whichever page preceded this one.
+const loginForm = document.getElementById('login-form');
+const loginErrorBox = document.getElementById('login-error-box');
+const loginSubmitBtn = document.getElementById('login-submit-btn');
+
+loginForm.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  loginSubmitBtn.disabled = true;
+  const originalText = loginSubmitBtn.textContent;
+  loginSubmitBtn.textContent = 'Logging in...';
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      body: new FormData(loginForm),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      window.location.href = data.redirect || '/dashboard';
+      return; // keep button disabled during navigation
+    }
+
+    loginErrorBox.textContent = data.error || 'Login failed. Please try again.';
+    loginErrorBox.classList.remove('d-none');
+  } catch (err) {
+    loginErrorBox.textContent = 'Something went wrong. Please try again.';
+    loginErrorBox.classList.remove('d-none');
+  } finally {
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.textContent = originalText;
+  }
+});
+</script>
+{% endblock %}
