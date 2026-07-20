@@ -1,31 +1,48 @@
 package tests;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.AtsResultPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.JdMatchResultPage;
 
 import base.BaseTest;
 
 public class AtsResultTest extends BaseTest{
 	AtsResultPage atsresultpage;
 	HomePage homepage;
+	String resumePath;
+	String text;
 	
-	
-	
-	
+	@BeforeClass
+	public void loadJD() throws IOException {
+	    text = Files.readString(
+	        Paths.get(System.getProperty("user.dir"),
+	        "src","test","resources","TestData","JD.txt")
+	    );
+	}
 	@BeforeMethod
 	public void init() {
-		atsresultpage = new AtsResultPage(driver);
-		homepage = new HomePage(driver);
-		homepage.clickUploadForm();
-		String resumePath = System.getProperty("user.dir")
-		        + "/src/test/resources/TestData/Pushpak_Pranav_QA_Resume.docx";
 
-		homepage.selectFile(resumePath);
-		homepage.clickAnalyzeBtn();
+	    atsresultpage = new AtsResultPage(driver);
+	    homepage = new HomePage(driver);
+
+	    homepage.clickUploadForm();
+
+	    resumePath = System.getProperty("user.dir")
+	            + "/src/test/resources/TestData/Pushpak_Pranav_QA_Resume.docx";
+
+	    homepage.selectFile(resumePath);
+
+	    homepage.clickAnalyzeBtn();
 	}
 	@Test
 	public void verifyMainNavbarDisplayed() {
@@ -44,7 +61,9 @@ public class AtsResultTest extends BaseTest{
 	
 	@Test
 	public void verifyResumeFileName() {
-		Assert.assertEquals(atsresultpage.getResumeFileName(), "Pushpak_Pranav_QA_Resume.docx");
+		
+		String expectedFileName = new File(resumePath).getName();
+		Assert.assertEquals(atsresultpage.getResumeFileName(), expectedFileName );
 	}
 	
 	@Test
@@ -75,7 +94,7 @@ public class AtsResultTest extends BaseTest{
 	
 	@Test
 	public void verifyAiSummaryTextDisplayed() {
-	Assert.assertTrue(atsresultpage.isAiSummaryTextDisplayed(),"Ai Summary not Displayed");
+	Assert.assertTrue(atsresultpage.isAiSummaryDisplayed(),"Ai Summary not Displayed");
 	}
 	@Test
 	public void verifyJDMatchFormDisplayed() {
@@ -94,43 +113,6 @@ public class AtsResultTest extends BaseTest{
 	
 	@Test
 	public void verifyJdTextAreaAcceptsText() {
-		
-		String text =  "Job Summary\r\n"
-				+ "		\r\n"
-				+ "		We are looking for a detail-oriented Software Tester to ensure the quality and reliability of our software applications. The ideal candidate will be responsible for planning, executing, and documenting test cases, identifying bugs, and working closely with developers to deliver high-quality software.\r\n"
-				+ "		\r\n"
-				+ "		Key Responsibilities\r\n"
-				+ "		Review software requirements and prepare test scenarios and test cases.\r\n"
-				+ "		Perform manual testing of web, mobile, or desktop applications.\r\n"
-				+ "		Identify, document, and track software defects using bug-tracking tools.\r\n"
-				+ "		Conduct functional, regression, integration, smoke, and system testing.\r\n"
-				+ "		Verify bug fixes and ensure issues are resolved before release.\r\n"
-				+ "		Collaborate with developers, business analysts, and product managers.\r\n"
-				+ "		Prepare test reports and maintain testing documentation.\r\n"
-				+ "		Participate in Agile/Scrum meetings and sprint activities.\r\n"
-				+ "		Suggest improvements to enhance software quality and testing processes.\r\n"
-				+ "		Required Skills\r\n"
-				+ "		Strong understanding of Software Testing Life Cycle (STLC) and Software Development Life Cycle (SDLC).\r\n"
-				+ "		Experience with manual testing methodologies.\r\n"
-				+ "		Knowledge of defect tracking tools such as Jira, Bugzilla, or Azure DevOps.\r\n"
-				+ "		Understanding of API testing using Postman (preferred).\r\n"
-				+ "		Basic knowledge of SQL and databases.\r\n"
-				+ "		Excellent analytical, problem-solving, and communication skills.\r\n"
-				+ "		Ability to work independently and as part of a team.\r\n"
-				+ "		Qualifications\r\n"
-				+ "		Bachelor's degree in Computer Science, Information Technology, or a related field.\r\n"
-				+ "		1\\u20133 years of experience in software testing (Freshers with strong testing knowledge may also apply).\r\n"
-				+ "		ISTQB certification is a plus.\r\n"
-				+ "		Preferred Skills\r\n"
-				+ "		Knowledge of automation testing tools such as Selenium.\r\n"
-				+ "		Familiarity with Agile methodologies.\r\n"
-				+ "		Basic programming knowledge (Java, Python, or JavaScript) is an advantage.\r\n"
-				+ "		Benefits\r\n"
-				+ "		Competitive salary\r\n"
-				+ "		Health insurance\r\n"
-				+ "		Paid time off\r\n"
-				+ "		Learning and certification support\r\n"
-				+ "		Career growth opportunities." ;
 				
 		atsresultpage.enterJdText(text);
 		
@@ -152,8 +134,8 @@ public class AtsResultTest extends BaseTest{
 	}
 	@Test
 	public void verifyUploadButtonNavigateToHome() {
-		atsresultpage.clickUploadAnotherBtn();
-		Assert.assertTrue(homepage.isUploadFormDisplayed());
+		homepage = atsresultpage.clickUploadAnotherBtn();
+		Assert.assertTrue(homepage.isUploadFormDisplayed(), "Upload form should be displayed after clicking Upload Another.");
 		
 	}
 	
@@ -164,17 +146,8 @@ public class AtsResultTest extends BaseTest{
 				"Analyze button should be enabled");
 	}
 	
-	@Test
-	public void verifyDetectedDomainNotEmpty() {
-		String detectedDomain  =  atsresultpage.getDetectedDomain();
-		Assert.assertFalse(detectedDomain.trim().isEmpty(),"Domain is Empty");
-	}
-	@Test
-	public void verifyAtsScoreNotEmpty() {
-		String atsScoreValue =  atsresultpage.getAtsScoreValue();
-		Assert.assertFalse(atsScoreValue.trim().isEmpty(),"atsScoreValue is Empty");
-		
-	}
+	
+	
 	@Test
 	public void verifyGradeNotEmpty() {
 		String atsGradeValue =  atsresultpage.getAtsGradeValue();
@@ -196,16 +169,13 @@ public class AtsResultTest extends BaseTest{
 	}
 	
 	@Test
-	public void verifyAtsScoreFormat() {
-		Assert.assertTrue(
-				atsresultpage.getAtsScoreValue().matches("\\d+"));
-	}
-	
-	@Test
 	public void verifyAtsScoreRange() {
-		int score=Integer.parseInt(atsresultpage.getAtsScoreValue());
+		int score = atsresultpage.getAtsScoreValue();
 
-		Assert.assertTrue(score>=0 && score<=100);
+		Assert.assertTrue(
+		    score >= 0 && score <= 100,
+		    "Invalid ATS Score : " + score
+		);
 	}
 	
 	@Test 
@@ -213,21 +183,11 @@ public class AtsResultTest extends BaseTest{
 		String grade=atsresultpage.getAtsGradeValue();
 
 		Assert.assertTrue(
-
-		grade.equals("Excellent")
-
-		||
-
-		grade.equals("Good")
-
-		||
-
-		grade.equals("Average")
-
-		||
-
-		grade.equals("Poor")
-
+		        grade.equals("Excellent") ||
+		        grade.equals("Good") ||
+		        grade.equals("Average") ||
+		        grade.equals("Poor"),
+		        "Invalid ATS Grade : " + grade
 		);
 	}
 	
@@ -238,10 +198,27 @@ public class AtsResultTest extends BaseTest{
 	String domain=
 	atsresultpage.getDetectedDomain();
 
-	Assert.assertFalse(domain.trim().isEmpty());
+	Assert.assertFalse(domain.trim().isEmpty(),"Detected domain is empty");
 
-	Assert.assertNotEquals(domain,"Unknown");
+	Assert.assertNotEquals(domain,"Unknown", "Detected domain should not be Unknown");
 	}
+	
+	@Test
+	public void verifyAnalyzeMatchNavigatesToResultPage() {
+		JdMatchResultPage jdresultpage = atsresultpage.enterJdAndAnalyze(text);
+
+		Assert.assertTrue(
+		        jdresultpage.isMatchPercentageDisplayed(),
+		        "Match Percentage is not displayed after JD analysis."
+		    );
+		
+	}
+	
+	
+	
+	
+	
+	
 	@Test
 	public void verifyAllImportantElementsDisplayed() {
 		Assert.assertTrue(atsresultpage.isMainNavbarDisplayed(),"Navbar not Displayed");
@@ -251,7 +228,7 @@ public class AtsResultTest extends BaseTest{
 		Assert.assertTrue(atsresultpage.isAtsMatchedSkillsblockDisplayed(),"Matched Skills not Displayed");
 		Assert.assertTrue(atsresultpage.isAtsMissingSkillsBlockDisplayed(),"Missing Skills not displayed");
 		Assert.assertTrue(atsresultpage.isAtsScoreProgressBarDisplayed(),"Progress Bar not Displayed");
-		Assert.assertTrue(atsresultpage.isAiSummaryTextDisplayed(),"Ai Summary not Displayed");
+		Assert.assertTrue(atsresultpage.isAiSummaryDisplayed(),"Ai Summary not Displayed");
 		Assert.assertTrue(atsresultpage.isJDMatchFormDisplayed(),"JD Form Not Displayed");
 		Assert.assertEquals(atsresultpage.getJdTextAreaPlaceholder(),"Paste the full job description here...");
 		Assert.assertTrue(atsresultpage.isJdAnalyzeBtnDisplayed(),"Analyze Button not Displayed");

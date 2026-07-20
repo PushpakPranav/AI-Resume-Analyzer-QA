@@ -1,0 +1,20 @@
+Job Summary
+
+We are looking for a detail-oriented Software Tester to ensure the quality and reliability of our software applications.
+
+Key Responsibilities
+- Prepare test cases
+- Perform Manual Testing
+- Regression Testing
+- Smoke Testing
+- API Testing
+- SQL
+- Selenium
+
+Required Skills
+- STLC
+- SDLC
+- Jira
+- Postman
+- SQL
+- Selenium
