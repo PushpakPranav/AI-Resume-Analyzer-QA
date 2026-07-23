@@ -208,12 +208,11 @@ public class AtsResultTest extends BaseTest{
 		JdMatchResultPage jdresultpage = atsresultpage.enterJdAndAnalyze(text);
 
 		Assert.assertTrue(
-		        jdresultpage.isMatchPercentageDisplayed(),
-		        "Match Percentage is not displayed after JD analysis."
+		        jdresultpage.isJdMatchResultPageHeaderDisplayed(),
+		        "Match Result Page is not displayed after JD analysis."
 		    );
 		
 	}
-	
 	
 	
 	

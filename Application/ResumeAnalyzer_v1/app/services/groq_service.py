@@ -261,8 +261,21 @@ Return ONLY this JSON:
             if fallback not in suggestions:
                 suggestions.append(fallback)
 
+        # BUG FIX: match_percentage was being trusted from the LLM's own
+        # subjective output, completely independent of the matched_skills/
+        # missing_skills counts actually shown on the page. This let the LLM
+        # report a number (e.g. 20%) that's inconsistent with the real data
+        # (e.g. 0 matched out of 16 total skills, which is actually 0%).
+        # Calculate it deterministically instead, so the percentage always
+        # agrees with what the person can see and count for themselves.
+        total_skills = len(matched) + len(missing)
+        if total_skills == 0:
+            match_percentage = 0.0
+        else:
+            match_percentage = round((len(matched) / total_skills) * 100, 1)
+
         return {
-            "match_percentage": round(_safe_float(result.get("match_percentage", 0)), 1),
+            "match_percentage": match_percentage,
             "matched_skills": matched,
             "missing_skills": missing,
             "feedback": _ensure_list(result.get("feedback", [])),
@@ -270,8 +283,6 @@ Return ONLY this JSON:
         }
     except Exception as e:
         return {"match_percentage": 0.0, "matched_skills": [], "missing_skills": [], "feedback": [f"Analysis failed: {e}"], "suggestions": []}
-
-
 def groq_rewrite_bullets(resume_text):
     prompt = f"""Find complete bullet points (minimum 8 words) in this resume that use WEAK language: worked on, helped, assisted, handled, used, made, did, was responsible for, participated in.
 
