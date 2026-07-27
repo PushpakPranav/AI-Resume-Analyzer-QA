@@ -6,9 +6,13 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
-def _call_groq(prompt, max_tokens=1500):
-    if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY not found in .env file")
+class GroqTruncatedError(Exception):
+    def __init__(self, partial_content):
+        self.partial_content = partial_content
+        super().__init__("Groq response was truncated (hit max_tokens)")
+
+
+def _build_groq_request(prompt, max_tokens, temperature, seed):
     body = json.dumps({
         "model": "llama-3.3-70b-versatile",
         "messages": [
@@ -16,18 +20,35 @@ def _call_groq(prompt, max_tokens=1500):
             {"role": "user", "content": prompt}
         ],
         "max_tokens": max_tokens,
-        "temperature": 0.2,
+        "temperature": temperature,
+        "seed": seed,
     }).encode("utf-8")
-    req = urllib.request.Request(
+    return urllib.request.Request(
         GROQ_URL, data=body,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_API_KEY}", "User-Agent": "Mozilla/5.0", "Accept": "application/json"},
         method="POST"
     )
+
+
+def _call_groq(prompt, max_tokens=1500, temperature=0.1, seed=42):
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY not found in .env file")
+
     for attempt in range(3):
+        req = _build_groq_request(prompt, max_tokens, temperature, seed)
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                return data["choices"][0]["message"]["content"]
+                choice = data["choices"][0]
+                content = choice["message"]["content"]
+                if choice.get("finish_reason") == "length":
+                    raise GroqTruncatedError(content)
+                return content
+        except GroqTruncatedError:
+            if attempt == 2:
+                raise
+            max_tokens = int(max_tokens * 1.5)
+            time.sleep(1)
         except urllib.error.HTTPError as e:
             if attempt == 2:
                 raise RuntimeError(f"Groq API error {e.code}: {e.read().decode()}")
@@ -50,6 +71,20 @@ def _parse_json(text):
         raise ValueError("Unable to parse JSON response")
 
 
+def _call_groq_json(prompt, max_tokens=1500, temperature=0.1, seed=42, max_retries=2):
+    last_err = None
+    for attempt in range(max_retries + 1):
+        try:
+            raw = _call_groq(prompt, max_tokens=max_tokens, temperature=temperature, seed=seed)
+            return _parse_json(raw)
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                time.sleep(1)
+                continue
+            raise last_err
+
+
 def _safe_float(value, default=0):
     try:
         return float(value)
@@ -62,12 +97,6 @@ def _grade_color(grade):
 
 
 def _ensure_list(value):
-    """Guarantee a list of strings is returned, regardless of what the LLM sent.
-    If the LLM ever returns a plain string instead of a JSON array for a field
-    like 'feedback' or 'suggestions', Jinja's `{% for x in value %}` would
-    silently iterate character-by-character (since strings are iterable in
-    Python) and render one card per letter. Normalize here so that can never
-    happen downstream."""
     if isinstance(value, list):
         return [str(item).strip() for item in value if str(item).strip()]
     if isinstance(value, str):
@@ -77,8 +106,6 @@ def _ensure_list(value):
 
 
 def _remove_overlap(matched, missing):
-    """Remove any missing_skill that conceptually overlaps with an already-matched skill.
-    e.g. if 'JIRA' is matched, remove 'Defect Tracking Tools' / 'Bug Tracking' from missing."""
     matched_lower = [m.lower() for m in matched]
     cleaned_missing = []
     for miss in missing:
@@ -108,45 +135,38 @@ def _tokenize_words(text):
     raw_words = re.findall(r"[a-z0-9+.#]+", text.lower())
     cleaned = set()
     for w in raw_words:
-        w = w.strip(".")  # drop sentence-ending/leading periods, keep internal dots (e.g. "power.bi" style tools)
+        w = w.strip(".")
         if w:
             cleaned.add(w)
     return cleaned
 
 
 def _skill_in_text(skill, norm_text, text_words):
-    """True if `skill` genuinely appears in the given text (word-boundary aware)."""
     skill_norm = _normalize(skill).strip()
     if not skill_norm:
         return False
-    if " " in skill_norm:
-        return skill_norm in norm_text
-    return skill_norm in text_words
+    if " " not in skill_norm:
+        return skill_norm in text_words
+    if skill_norm in norm_text:
+        return True
+    core_tokens = [t for t in skill_norm.split() if t not in ("ms", "microsoft")]
+    if not core_tokens:
+        core_tokens = skill_norm.split()
+    return all(t in text_words for t in core_tokens)
 
 
 def _verify_against_jd_and_resume(matched, missing, jd_text, resume_text):
-    """Cross-check the LLM's matched/missing lists against the actual JD and
-    resume text. Only skills genuinely present in the JD are allowed to remain
-    in either list; placement between matched/missing is corrected based on
-    whether the skill is actually present in the resume."""
     jd_norm = _normalize(jd_text)
     jd_words = _tokenize_words(jd_text)
     resume_norm = _normalize(resume_text)
     resume_words = _tokenize_words(resume_text)
 
-    all_candidates = list(dict.fromkeys(matched + missing))  # dedupe, keep order
+    all_candidates = list(dict.fromkeys(matched + missing))
 
     verified_matched, verified_missing = [], []
     for skill in all_candidates:
-        # Rule (a): skill must genuinely be part of the JD. If it isn't
-        # (e.g. AI hallucinated a resume-only skill like "Git"/"SQL" into
-        # matched_skills), drop it entirely — it should never have been
-        # compared against the JD in the first place.
         if not _skill_in_text(skill, jd_norm, jd_words):
             continue
-
-        # Rule (b): correctly place it based on real presence in the resume,
-        # regardless of what the LLM originally decided.
         if _skill_in_text(skill, resume_norm, resume_words):
             verified_matched.append(skill)
         else:
@@ -156,14 +176,25 @@ def _verify_against_jd_and_resume(matched, missing, jd_text, resume_text):
 
 
 def _is_generic_only(matched_skills):
-    """True if matched_skills has no real signal — empty, or every entry is a generic office/soft skill."""
     if not matched_skills:
         return True
     return all(skill.strip().lower() in GENERIC_SKILLS for skill in matched_skills)
 
 
+def _dedupe_skill_list(skills):
+    result = []
+    for s in skills:
+        s_stripped = str(s).strip()
+        if not s_stripped:
+            continue
+        low = s_stripped.lower()
+        if any(low in r.lower() or r.lower() in low for r in result):
+            continue
+        result.append(s_stripped)
+    return result
+
+
 def groq_ats_score(resume_text):
-    """Fully AI-driven — Groq decides domain, skills, and score. No hardcoded dictionary."""
     prompt = f"""You are an expert ATS resume analyzer with deep knowledge of every professional domain — Software Development, Software Testing, Data Science, DevOps, Finance, Marketing, HR, Sales, Cybersecurity, Design, etc.
 
 Analyze this resume and:
@@ -193,7 +224,7 @@ Max 15 matched_skills, max 8 missing_skills.
 Resume:
 {resume_text[:3500]}"""
     try:
-        result = _parse_json(_call_groq(prompt, 900))
+        result = _call_groq_json(prompt, max_tokens=900)
         grade = result.get("grade", "Average")
         matched = _ensure_list(result.get("matched_skills", []))[:15]
         missing = _ensure_list(result.get("missing_skills", []))[:8]
@@ -209,46 +240,53 @@ Resume:
             "matched_skills": matched,
             "missing_skills": missing,
             "summary": result.get("summary", ""),
+            "error": False,
         }
-    except Exception as e:
-        return {"detected_domain": "General", "ats_score": 0, "grade": "Error", "grade_color": "secondary", "matched_skills": [], "missing_skills": [], "summary": f"Analysis failed: {e}"}
+    except Exception:
+        return {
+            "detected_domain": "General",
+            "ats_score": 0,
+            "grade": "Error",
+            "grade_color": "secondary",
+            "matched_skills": [],
+            "missing_skills": [],
+            "summary": "We couldn't fully analyze this resume due to a temporary issue. Please try again.",
+            "error": True,
+        }
 
 
 def groq_jd_match(resume_text, job_description):
-    prompt = f"""You are a strict ATS system. Compare resume against job description.
+    prompt = f"""You are a strict ATS system analyzing a job description.
 
-STRICT RULES:
-1. Extract ALL skills/tools/technologies mentioned in the JD
-2. matched_skills = skills from JD that ARE present in the resume (read resume carefully line by line)
-3. missing_skills = skills from JD that are NOT present in the resume
-4. NEVER add any skill not explicitly written in the JD
-5. If skill is in resume AND in JD, it MUST go in matched_skills
-6. Double check resume before marking any skill as missing
-7. Use SPECIFIC tool/skill names only, never generic categories
-8. CRITICAL: If a specific tool is in matched_skills (e.g. "JIRA"), do NOT also list its generic category in missing_skills (e.g. "Defect Tracking Tools")
-9. You MUST always return at least 4 items in "suggestions", even if match_percentage is high — give concrete, specific advice for this exact resume and JD, never leave it empty and never return fewer than 4.
-10. CRITICAL — DO NOT SKIP ANY JD SKILL: Even if a skill/tool/term explicitly named in the JD looks unusual, unfamiliar, made-up, or is not a well-known real-world tool, you MUST still extract it and place it in matched_skills (if present in resume) or missing_skills (if not). NEVER silently drop an explicitly-stated JD requirement just because you don't recognize it — every skill named in the JD must end up in exactly one of the two lists.
+TASK: Extract EVERY skill, tool, technology, or specific competency that is explicitly required or mentioned in the JD below. This is extraction only — do not check the resume yet.
+
+RULES:
+1. List EVERY skill/tool named in the JD, no matter how minor or how it's phrased (e.g. "MS Word", "Outlook", "Data Entry", "VLOOKUP", "Pivot Table") — never skip one just because it's mentioned briefly or alongside another skill (e.g. "MS Word and Outlook" contains TWO separate skills: "MS Word" AND "Outlook" — both must be listed).
+2. Use SPECIFIC tool/skill names, never generic categories (e.g. "MS Outlook" not "office tools", "Python" not "programming languages").
+3. Do not invent a skill that is not explicitly stated in the JD.
+4. Also write a 1-2 sentence feedback note and at least 4 specific, actionable suggestions for this resume given this JD.
 
 Return ONLY this JSON:
-{{"match_percentage":72.5,"matched_skills":["selenium","postman","sql","git"],"missing_skills":["docker"],"feedback":["specific observation about this resume for this role"],"suggestions":["specific actionable tip 1","specific actionable tip 2","specific actionable tip 3","specific actionable tip 4"]}}
+{{"jd_required_skills":["ms excel","ms word","ms outlook","vlookup","pivot table","data entry"],"feedback":["specific observation about this resume for this role"],"suggestions":["specific actionable tip 1","specific actionable tip 2","specific actionable tip 3","specific actionable tip 4"]}}
 
-=== JD (extract skills only from here) ===
+=== JOB DESCRIPTION (extract every skill named here) ===
 {job_description[:1500]}
 
-=== RESUME (check which JD skills are present here) ===
+=== RESUME (context only, for feedback/suggestions — do not use it to decide which skills to list) ===
 {resume_text[:2500]}"""
     try:
-        result = _parse_json(_call_groq(prompt, 1400))
-        matched = _ensure_list(result.get("matched_skills", []))
-        missing = _ensure_list(result.get("missing_skills", []))
-        matched, missing = _verify_against_jd_and_resume(matched, missing, job_description, resume_text)
+        result = _call_groq_json(prompt, max_tokens=2000)
+        jd_skills = _dedupe_skill_list(_ensure_list(result.get("jd_required_skills", [])))
+
+        # Classification is deterministic, not left to the LLM: every
+        # extracted JD skill is checked directly against the resume text.
+        # This guarantees every explicit JD skill lands in exactly one of
+        # matched/missing, instead of relying on the model to also get the
+        # matched/missing split right in the same pass.
+        matched, missing = _verify_against_jd_and_resume(jd_skills, [], job_description, resume_text)
         missing = _remove_overlap(matched, missing)
 
         suggestions = _ensure_list(result.get("suggestions", []))
-        # BUG_022 FIX: guarantee at least 4 suggestions even if the LLM
-        # under-delivers, so the PDF report's Improvement Tips section is
-        # never short. Generic fallbacks are appended only to fill the gap,
-        # real AI-generated ones are always kept first.
         generic_fallbacks = [
             "Tailor your resume keywords to more closely match the exact terminology used in the job description.",
             "Quantify your achievements with specific numbers, percentages, or metrics wherever possible.",
@@ -261,13 +299,6 @@ Return ONLY this JSON:
             if fallback not in suggestions:
                 suggestions.append(fallback)
 
-        # BUG FIX: match_percentage was being trusted from the LLM's own
-        # subjective output, completely independent of the matched_skills/
-        # missing_skills counts actually shown on the page. This let the LLM
-        # report a number (e.g. 20%) that's inconsistent with the real data
-        # (e.g. 0 matched out of 16 total skills, which is actually 0%).
-        # Calculate it deterministically instead, so the percentage always
-        # agrees with what the person can see and count for themselves.
         total_skills = len(matched) + len(missing)
         if total_skills == 0:
             match_percentage = 0.0
@@ -280,9 +311,19 @@ Return ONLY this JSON:
             "missing_skills": missing,
             "feedback": _ensure_list(result.get("feedback", [])),
             "suggestions": suggestions,
+            "error": False,
         }
-    except Exception as e:
-        return {"match_percentage": 0.0, "matched_skills": [], "missing_skills": [], "feedback": [f"Analysis failed: {e}"], "suggestions": []}
+    except Exception:
+        return {
+            "match_percentage": 0.0,
+            "matched_skills": [],
+            "missing_skills": [],
+            "feedback": ["We couldn't fully analyze this JD due to a temporary issue. Please try again."],
+            "suggestions": [],
+            "error": True,
+        }
+
+
 def groq_rewrite_bullets(resume_text):
     prompt = f"""Find complete bullet points (minimum 8 words) in this resume that use WEAK language: worked on, helped, assisted, handled, used, made, did, was responsible for, participated in.
 
@@ -299,7 +340,7 @@ Max 4 items. Return [] if none found.
 Resume:
 {resume_text[:2500]}"""
     try:
-        result = _parse_json(_call_groq(prompt, 800))
+        result = _call_groq_json(prompt, max_tokens=800)
         if isinstance(result, list):
             return [r for r in result
                     if len(r.get("original","").split()) >= 8
@@ -317,11 +358,6 @@ _PLACEHOLDER_PATTERNS = (
 
 
 def _is_placeholder(text):
-    """True if the LLM sent a 'there's nothing here' sentence instead of
-    real content (or an actual None/empty value). Used to sanitize course/
-    cert fields so downstream templates/PDF can rely on a simple truthy
-    check without accidentally displaying the LLM's own placeholder
-    sentence as if it were real data."""
     if not text or not isinstance(text, str):
         return True
     lowered = text.strip().lower()
@@ -331,10 +367,6 @@ def _is_placeholder(text):
 
 
 def _is_useless_url(url):
-    """True if the URL passes a basic http(s) check but is actually a bare
-    search-engine homepage with no query string (e.g. the LLM returning
-    'https://www.google.com/search' with nothing after it). Such a link is
-    technically valid but leads nowhere useful for the user."""
     if not url or not isinstance(url, str):
         return True
     url_lower = url.lower()
@@ -361,17 +393,10 @@ Return ONLY JSON array:
 [{{"skill":"power bi","priority":"High","course":"Microsoft Power BI Desktop","course_url":"https://www.udemy.com/course/microsoft-power-bi-up-running-with-power-bi-desktop/","platform":"Udemy","cert":"PL-300 Microsoft Power BI Data Analyst"}}]
 Priority: High=first 3, Medium=next 3, Low=rest. Real URLs only."""
     try:
-        result = _parse_json(_call_groq(prompt, 1000))
+        result = _call_groq_json(prompt, max_tokens=1000)
         if not isinstance(result, list):
             return []
 
-        # BUG FIX (roadmap-skill-mapping): don't blindly trust the LLM's
-        # "skill" field. It sometimes ignores the requested missing_skills
-        # list and returns unrelated/generic skills (e.g. Jira, Selenium,
-        # DevOps) instead of a card for the skill that's actually missing.
-        # Only accept an item if it genuinely corresponds to one of the
-        # skills we asked about, and make sure every requested skill still
-        # gets a card even if the LLM skipped it.
         normalized_requested = {s.strip().lower(): s for s in skills_list}
 
         seen, unique = set(), []
@@ -385,12 +410,9 @@ Priority: High=first 3, Medium=next 3, Low=rest. Real URLs only."""
             if not matched_skill or matched_skill.lower() in seen:
                 continue
             seen.add(matched_skill.lower())
-            item["skill"] = matched_skill  # normalize to the actual requested skill name
+            item["skill"] = matched_skill
             unique.append(item)
 
-        # Any requested skill the LLM didn't map to (skipped or replaced with
-        # something unrelated) still gets a graceful fallback card instead of
-        # silently disappearing.
         for skill in skills_list:
             if skill.lower() not in seen:
                 unique.append({
@@ -402,13 +424,6 @@ Priority: High=first 3, Medium=next 3, Low=rest. Real URLs only."""
                     "cert": None,
                 })
 
-        # Sanitize placeholder "there's nothing here" sentences the LLM
-        # sometimes sends instead of a real null/empty value (e.g.
-        # "No relevant certification found"), and fix "bare" search-engine
-        # URLs that pass a scheme check but lead nowhere useful. Without
-        # this, both the PDF and the web UI would display the LLM's
-        # placeholder sentence as if it were real course/cert data, or a
-        # dead-end link as if it were a working course URL.
         for item in unique:
             if _is_placeholder(item.get("course")):
                 item["course"] = "No course recommendation available"
