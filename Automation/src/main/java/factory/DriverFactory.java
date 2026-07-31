@@ -1,4 +1,5 @@
 package factory;
+import java.io.File;
 import java.util.HashMap;
 
 import org.openqa.selenium.WebDriver;
@@ -14,7 +15,8 @@ public class DriverFactory {
 	public static WebDriver initializeBrowser() {
 		WebDriverManager.chromedriver().setup();
 		
-		String downloadPath = System.getProperty("user.dir") + "/Downloads"	;
+		String downloadPath = new File(System.getProperty("user.dir"), "Downloads")
+		        .getAbsolutePath();
 		
 		HashMap<String,Object> prefs = new HashMap<>();
 		
