@@ -1,5 +1,8 @@
 package com.resumeanalyzer.ResumeAnalyzerAutomation.pages;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -136,14 +139,14 @@ public class JdMatchResultPage extends BasePage {
 
     // ================= Actions =================
 
-    public void clickTopDownloadReport() {
+    public File clickTopDownloadReport() throws IOException{
     	
-        click(topDownloadReportBtn);
+        return clickDownloadReport(topDownloadReportBtn);
     }
 
-    public void clickBottomDownloadReport() {
+    public File clickBottomDownloadReport() throws IOException {
     	scrollToElement(bottomDownloadBtn);
-        click(bottomDownloadBtn);
+    	return clickDownloadReport(bottomDownloadBtn);
     }
 
     public HomePage clickAnalyzeAnotherResume() {

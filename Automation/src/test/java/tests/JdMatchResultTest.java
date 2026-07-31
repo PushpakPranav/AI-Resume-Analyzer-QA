@@ -14,13 +14,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.AtsResultPage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.BasePage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.JdMatchResultPage;
 
 import base.BaseTest;
 
 public class JdMatchResultTest extends BaseTest {
-
     private HomePage homePage;
     private AtsResultPage atsResultPage;
     private JdMatchResultPage jdPage;
@@ -51,7 +51,6 @@ public class JdMatchResultTest extends BaseTest {
 
     @BeforeMethod
     public void setupTest() {
-
         homePage = new HomePage(driver);
         atsResultPage = new AtsResultPage(driver);
 
@@ -255,99 +254,29 @@ public class JdMatchResultTest extends BaseTest {
 
     @Test
     public void verifyTopDownloadButtonDownloadsPdfSuccessfully() throws IOException {
-    	Path downloadDir = Paths.get(System.getProperty("user.dir"),"Downloads");
-    	
-    	Files.list(downloadDir)
-    	.filter(path -> path.getFileName().toString().startsWith("ATS_Report"))
-    	.forEach(path ->{
-    		try {
-    			Files.delete(path);
-    		} catch (IOException e) {
-    			e.printStackTrace();
-    		}
-    		
-    	});
+    	File downloadedFile = jdPage.clickTopDownloadReport();
+    	Assert.assertTrue(downloadedFile.exists(), "Downloaded file does not exist");
+    	Assert.assertTrue(downloadedFile.length() > 0, "Downloaded PDF is empty");
+    	Assert.assertTrue(downloadedFile.length() > MIN_PDF_SIZE,
+    	        "Downloaded PDF is too small.");
 
-        jdPage.clickTopDownloadReport();
-        
-        WebDriverWait wait = new WebDriverWait(driver,Duration.ofSeconds(10));
-        wait.until(driver -> {
-        	File[] pdfFiles = downloadDir.toFile().listFiles((dir, name) ->
-        	name.startsWith("ATS_Report")
-        	&& name.endsWith(".pdf")
-            && !name.endsWith(".crdownload"));
-
-        	return pdfFiles != null && pdfFiles.length > 0;
-        });
-
-File[] pdfFiles = downloadDir.toFile().listFiles(
-        (dir, name) -> name.startsWith("ATS_Report")
-                && name.endsWith(".pdf"));
-
-Assert.assertNotNull(pdfFiles, "No PDF files found");
-Assert.assertTrue(pdfFiles.length > 0, "PDF was not downloaded");
-
-File downloadedFile = pdfFiles[0];
-Assert.assertTrue(downloadedFile.exists(), "Downloaded file does not exist");
-Assert.assertTrue(downloadedFile.length() > 0, "Downloaded PDF is empty");
-Assert.assertTrue(downloadedFile.length() > MIN_PDF_SIZE,
-        "Downloaded PDF is too small.");
-String fileName = downloadedFile.getName();
-Assert.assertTrue(
-        fileName.matches("ATS_Report_\\d+( \\(\\d+\\))?\\.pdf"),
-        "Invalid file name: " + fileName);
-        }
+    	Assert.assertTrue(
+    	    downloadedFile.getName().matches("ATS_Report_\\d+( \\(\\d+\\))?\\.pdf"),
+    	    "Invalid file name: " + downloadedFile.getName());
+    }
 
     @Test
-    public void verifyBottomDownloadButtonDownloadsPdfSuccessfully() throws IOException {
+    public void verifyBottomDownloadBtnDownloadsPdfSuccessfully() throws IOException {
+    	File downloadedFile = jdPage.clickBottomDownloadReport();
 
-        Path downloadDir = Paths.get(System.getProperty("user.dir"), "Downloads");
-        
+    	Assert.assertNotNull(downloadedFile, "No PDF files found");
+    	Assert.assertTrue(downloadedFile.exists(), "Downloaded file does not exist");
+    	Assert.assertTrue(downloadedFile.length() > 0, "Downloaded PDF is empty");
+    	Assert.assertTrue(downloadedFile.length() > MIN_PDF_SIZE,
+    	        "Downloaded PDF is too small.");
 
-        // Delete old files
-        Files.list(downloadDir)
-        .filter(path -> path.getFileName().toString().startsWith("ATS_Report"))
-        .forEach(path -> {
-            try {
-                Files.delete(path);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        // Click Download
-        jdPage.clickBottomDownloadReport();
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-
-        // Wait until any PDF appears in the Downloads folder
-        wait.until(driver -> {
-            File[] pdfFiles = downloadDir.toFile().listFiles((dir, name) ->
-                    name.startsWith("ATS_Report")
-                    && name.endsWith(".pdf")
-                    && !name.endsWith(".crdownload"));
-
-            return pdfFiles != null && pdfFiles.length > 0;
-        });
-
-        File[] pdfFiles = downloadDir.toFile().listFiles(
-                (dir, name) -> name.startsWith("ATS_Report")
-                        && name.endsWith(".pdf"));
-
-        Assert.assertNotNull(pdfFiles, "No PDF files found");
-        Assert.assertTrue(pdfFiles.length > 0, "PDF was not downloaded");
-
-        File downloadedFile = pdfFiles[0];
-        Assert.assertTrue(downloadedFile.exists(), "Downloaded file does not exist");
-        Assert.assertTrue(downloadedFile.length() > 0, "Downloaded PDF is empty");
-        Assert.assertTrue(downloadedFile.length() > MIN_PDF_SIZE,
-                "Downloaded PDF is too small.");
-        String fileName = downloadedFile.getName();
-        Assert.assertTrue(
-                fileName.matches("ATS_Report_\\d+( \\(\\d+\\))?\\.pdf"),
-                "Invalid file name: " + fileName);
-    }
-   
-    
-
+    	Assert.assertTrue(
+    	    downloadedFile.getName().matches("ATS_Report_\\d+( \\(\\d+\\))?\\.pdf"),
+    	    "Invalid file name: " + downloadedFile.getName());
+}
 }
