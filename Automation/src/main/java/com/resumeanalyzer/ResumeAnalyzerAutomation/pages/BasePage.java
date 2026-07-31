@@ -19,7 +19,6 @@ import org.testng.Assert;
 public class BasePage {
 	
 	protected WebDriver driver;
-	private static final long MIN_PDF_SIZE = 100;
 	private static final Path DOWNLOAD_DIR = Paths.get(System.getProperty("user.dir"), "Downloads");
 	
 	public BasePage(WebDriver driver) {

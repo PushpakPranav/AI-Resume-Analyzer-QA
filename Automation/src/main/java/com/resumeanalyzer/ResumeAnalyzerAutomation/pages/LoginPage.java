@@ -9,10 +9,12 @@ import components.NavbarComponent;
 
 public class LoginPage extends BasePage{
 	NavbarComponent navbar;
+	ForgotPasswordPage forgotPasswordPage;
 
 	public LoginPage(WebDriver driver) {
 		super(driver);
 		navbar = new NavbarComponent(driver);
+		forgotPasswordPage = new ForgotPasswordPage(driver);
 		PageFactory.initElements( driver,this);
 		
 	}
@@ -24,13 +26,14 @@ public class LoginPage extends BasePage{
 	@FindBy(className="fw-bold") WebElement WelcomeText;
 	@FindBy(xpath="//p[@class='text-center text-muted small mt-3 mb-0']") WebElement noAccountText;
 	@FindBy(xpath="//h4[@class='welcome-text']") WebElement welcomeMessage;
+	@FindBy(xpath = "//a[normalize-space()='Forgot password?']") WebElement forgotPasswordLink;
 	
 	
-	
-	public void loginWithCredentials(String email,String password) {
+	public DashboardPage loginWithCredentials(String email,String password) {
 		type(emailInput,email);
 		type(passwordInput,password);
 		click(loginBtn);
+		return new DashboardPage(driver);
 	}
 	
 	public void verifyWelcomeText(String Text) {
@@ -56,6 +59,10 @@ public class LoginPage extends BasePage{
 		navbar.clickHome();
 	}
 	
+	public ForgotPasswordPage clickForgotPassword() {
+		click(forgotPasswordLink);
+		return new ForgotPasswordPage(driver);
+	}
 	
 	
 	

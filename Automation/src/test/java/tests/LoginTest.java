@@ -16,11 +16,12 @@ public class LoginTest extends BaseTest{
 	public void init() {
 		loginpage = new LoginPage(driver);
 		homepage = new HomePage(driver);
+		homepage.clickLogin();
 	}
 	
 	@Test
 	public void verifyValidLogin() {
-		homepage.clickLogin();
+		
 		loginpage.loginWithCredentials("testname100@gmail.com","Test@123");
 		loginpage.verifyLoginSuccess("Welcome, testname100!");
 	}
