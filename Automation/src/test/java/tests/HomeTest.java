@@ -37,7 +37,7 @@ public class HomeTest extends BaseTest{
 	@Test
 	public void verifyResumeUploadFormDisplayed()  {
 		Assert.assertTrue(homepage.isUploadFormDisplayed(),"Resume Upload Form is not displayed.");
-		homepage.verifyUploadInstructionText();
+		Assert.assertEquals(homepage.getUploadInstructionText(),"Drag & drop or click to browse");
 	}
 	@Test
 	public void verifyAnalyzeBtnDisplayed() {
@@ -103,7 +103,7 @@ public class HomeTest extends BaseTest{
 	}
 	@Test
 	public void verifySupportedFileTypeText() {
-		homepage.supportedFileTypeText("Supports PDF and DOCX");
+		Assert.assertEquals(homepage.getSupportedFileTypeText(),"Supports PDF and DOCX");
 	}
 	@Test
 	public void verifyHowItWorksSectionDisplayed() {

@@ -36,14 +36,12 @@ public class LoginPage extends BasePage{
 		return new DashboardPage(driver);
 	}
 	
-	public void verifyWelcomeText(String Text) {
-		checkText(getText(WelcomeText),Text);
-		;
+	public String getWelcomeText() {
+		return getText(WelcomeText);
 	}
 	
-	public void verifyNoAccountText(String expected)
-	{
-	    checkText(getText(noAccountText), expected);
+	public String getNoAccountText(){
+	    return getText(noAccountText);
 	}
 
 	public void clickSignUpLink()
@@ -51,8 +49,8 @@ public class LoginPage extends BasePage{
 	    click(signUpLink);
 	}
 	
-	public void verifyLoginSuccess(String expectedText) {
-		checkText(getText(welcomeMessage),expectedText);
+	public String getLoginSuccess() {
+		return getText(welcomeMessage);
 	}
 	
 	public void clickHomeLink() {

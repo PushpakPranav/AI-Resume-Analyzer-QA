@@ -208,7 +208,7 @@ public class AtsResultTest extends BaseTest{
 		JdMatchResultPage jdresultpage = atsresultpage.enterJdAndAnalyze(text);
 
 		Assert.assertTrue(
-		        jdresultpage.isJdMatchResultPageHeaderDisplayed(),
+		        jdresultpage.isPageLoaded(),
 		        "Match Result Page is not displayed after JD analysis."
 		    );
 		

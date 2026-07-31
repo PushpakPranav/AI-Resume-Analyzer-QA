@@ -59,8 +59,8 @@ public class HomePage extends BasePage{
 	    }
 	    
 	    
-	    public void verifyUploadInstructionText() {
-	        checkText(getText(formText), "Drag & drop or click to browse");
+	    public String getUploadInstructionText() {
+	        return getText(formText);
 	    }
 	    
 	    public boolean isAnalyzeBtnEnabled() {
@@ -79,8 +79,8 @@ public class HomePage extends BasePage{
 	    	fileInput.sendKeys(filepath);
 	    }
 	    
-	    public void supportedFileTypeText(String expectedText) {
-	    	checkText(getText(supportedFileTypeText), expectedText);
+	    public String getSupportedFileTypeText() {
+	    	return getText(supportedFileTypeText);
 	    }
 	    
 	    

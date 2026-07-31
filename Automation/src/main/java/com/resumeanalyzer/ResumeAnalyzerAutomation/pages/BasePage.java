@@ -14,7 +14,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.testng.Assert;
 
 public class BasePage {
 	
@@ -38,9 +37,7 @@ public class BasePage {
 		return ele.getText();
 	}
 	
-	public void checkText(String actual,String expected ) {
-		Assert.assertEquals(actual,expected);
-	}
+
 	
 	public boolean isDisplayed(WebElement ele) {
 		return ele.isDisplayed();
