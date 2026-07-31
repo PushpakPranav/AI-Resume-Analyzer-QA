@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -42,6 +43,14 @@ public class BasePage {
 	public boolean isDisplayed(WebElement ele) {
 		return ele.isDisplayed();
 		
+	}
+	public boolean isDisplayedSafely(By locator, int timeoutSeconds) {
+	    try {
+	        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+	        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator)) != null;
+	    } catch (Exception e) {
+	        return false;
+	    }
 	}
 	public void scrollToElement(WebElement ele) {
 	Actions action = new Actions(driver);

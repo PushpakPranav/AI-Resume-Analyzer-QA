@@ -1,5 +1,8 @@
 package components;
 
+import java.util.List;
+
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -14,8 +17,8 @@ public class NavbarComponent extends BasePage{
 		PageFactory.initElements(driver, this);	
 		}
 	
-	@FindBy(linkText="Login") WebElement navLoginBtn;
-    @FindBy(linkText="Sign Up") WebElement navSignUpBtn;
+	private final By loginBtnLocator = By.linkText("Login");
+    private final By signUpBtnLocator = By.linkText("Sign Up");
     @FindBy(id="nav-home-link") WebElement homeBtn;
     @FindBy(id="nav-dashboard-link") WebElement dashboardBtn;
     @FindBy(id="user-avatar-dropdown-toggle") WebElement userAvatarDropdown;
@@ -25,13 +28,12 @@ public class NavbarComponent extends BasePage{
     @FindBy(id="nav-brand-logo") WebElement brandLogo;
     
     
-    
     public void clickLogin() {
-    	click(navLoginBtn);
+        driver.findElement(loginBtnLocator).click();
     }
-    
+
     public void clickSignUp() {
-    	click(navSignUpBtn);
+        driver.findElement(signUpBtnLocator).click();
     }
     public void clickDashboard() {
     	click(dashboardBtn);
@@ -55,10 +57,13 @@ public class NavbarComponent extends BasePage{
     	click(brandLogo);
     }
     public boolean isLoginDisplayed() {
-    	return isDisplayed(navLoginBtn);
+        List<WebElement> elements = driver.findElements(loginBtnLocator);
+        return !elements.isEmpty() && elements.get(0).isDisplayed();
     }
+
     public boolean isSignUpDisplayed() {
-    	return isDisplayed(navSignUpBtn);
+        List<WebElement> elements = driver.findElements(signUpBtnLocator);
+        return !elements.isEmpty() && elements.get(0).isDisplayed();
     }
     public boolean isDashboardDisplayed() {
     	return isDisplayed(dashboardBtn);
