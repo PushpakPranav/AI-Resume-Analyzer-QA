@@ -14,12 +14,14 @@ public class JdMatchResultPage extends BasePage {
         super(driver);
         PageFactory.initElements(driver, this);
     }
+    
+//	  =====================
+//	  Elements
+//	  =====================
 
-    // Header
     @FindBy(id = "jdMatchResult")
     private WebElement matchResultHeader;
 
-    // Score Card
     @FindBy(id = "match-score-card")
     private WebElement matchScoreCard;
 
@@ -65,10 +67,77 @@ public class JdMatchResultPage extends BasePage {
     @FindBy(id = "download-full-report-btn")
     private WebElement bottomDownloadBtn;
 
-    // ================= Validation =================
+//	  =====================
+//	  Navigation
+//	  =====================
+    
+    public HomePage clickAnalyzeAnotherResume() {
+        scrollToElement(analyzeAnotherResumeBtn);
+        click(analyzeAnotherResumeBtn);
+        return new HomePage(driver);
+    }
+    
+//	  =====================
+//	  Actions
+//	  =====================
+    
+    public File clickTopDownloadReport() throws IOException {
+        return clickDownloadReport(topDownloadReportBtn);
+    }
+
+    public File clickBottomDownloadReport() throws IOException {
+    	scrollToElement(bottomDownloadBtn);
+    	return clickDownloadReport(bottomDownloadBtn);
+    }
+    
+//	  =====================
+//	  Getters
+//	  =====================
+    
+    public String getMatchPercentage() {
+        return getText(matchPercentage).trim();
+    }
+
+    public String getScoreCircleClass() {
+        return getAttribute(matchScoreCircle, "class");
+    }
+    
+    public String getResumeFileName() {
+        return getText(resumeFileName).trim();
+    }
+
+    public String getDetectedDomain() {
+        return getText(detectedDomain).trim();
+    }
+    
+    public String getCountSummary() {
+        return getText(countSummary);
+    }
+    
+    public String getProgressBarValue() {
+        String style = getAttribute(progressBar, "style");
+
+        for (String part : style.split(";")) {
+            part = part.trim();
+
+            if (part.startsWith("width:")) {
+                return part.replace("width:", "").trim();
+            }
+        }
+        return "";
+    }
+    
+//	  =====================
+//	  Validations
+//	  =====================
 
     public boolean isPageLoaded() {
-        return isDisplayed(matchResultHeader);
+    	return isDisplayed(matchResultHeader)
+    	        && isDisplayed(matchScoreCard)
+    	        && isDisplayed(matchPercentage)
+    	        && isDisplayed(progressBar)
+    	        && isDisplayed(feedbackCard)
+    	        && isDisplayed(analyzeAnotherResumeBtn);
     }
 
     public boolean isMatchScoreCardDisplayed() {
@@ -79,42 +148,8 @@ public class JdMatchResultPage extends BasePage {
         return isDisplayed(matchPercentage);
     }
 
-    public String getMatchPercentage() {
-        return getText(matchPercentage).trim();
-    }
-
-    public String getScoreCircleClass() {
-        return getAtribute(matchScoreCircle, "class");
-    }
-
-    public String getResumeFileName() {
-        return getText(resumeFileName).trim();
-    }
-
-    public String getDetectedDomain() {
-        return getText(detectedDomain).trim();
-    }
-
     public boolean isProgressBarDisplayed() {
         return isDisplayed(progressBar);
-    }
-
-    public String getProgressBarValue() {
-
-        String style = getAtribute(progressBar, "style");
-
-        for (String value : style.split(";")) {
-
-            if (value.trim().startsWith("width")) {
-                return value.replace("width:", "").trim();
-            }
-        }
-
-        return "";
-    }
-
-    public String getCountSummary() {
-        return getText(countSummary);
     }
 
     public boolean isMatchedSkillsDisplayed() {
@@ -125,7 +160,7 @@ public class JdMatchResultPage extends BasePage {
         return isDisplayed(missingSkills);
     }
 
-    public boolean isFeedbackDisplayed() {
+    public boolean isFeedbackCardDisplayed() {
         return isDisplayed(feedbackCard);
     }
 
@@ -133,25 +168,24 @@ public class JdMatchResultPage extends BasePage {
         return isDisplayed(aiRewriterCard);
     }
 
-    public boolean isSuggestionDisplayed() {
+    public boolean isSuggestionsCardDisplayed() {
         return isDisplayed(suggestionCard);
-    }
-
-    // ================= Actions =================
-
-    public File clickTopDownloadReport() throws IOException{
-    	
-        return clickDownloadReport(topDownloadReportBtn);
-    }
-
-    public File clickBottomDownloadReport() throws IOException {
-    	scrollToElement(bottomDownloadBtn);
-    	return clickDownloadReport(bottomDownloadBtn);
-    }
-
-    public HomePage clickAnalyzeAnotherResume() {
-        click(analyzeAnotherResumeBtn);
-        return new HomePage(driver);
+    } 
+    
+    public boolean isDownloadButtonsDisplayed() {
+    	return isTopDownloadButtonDisplayed()
+    		    && isBottomDownloadButtonDisplayed();
     }
     
+    public boolean isTopDownloadButtonDisplayed() {
+        return isDisplayed(topDownloadReportBtn);
+    }
+
+    public boolean isBottomDownloadButtonDisplayed() {
+        return isDisplayed(bottomDownloadBtn);
+    }
+    
+    public boolean isAnalyzeAnotherResumeButtonDisplayed() {
+        return isDisplayed(analyzeAnotherResumeBtn);
+    }
 }

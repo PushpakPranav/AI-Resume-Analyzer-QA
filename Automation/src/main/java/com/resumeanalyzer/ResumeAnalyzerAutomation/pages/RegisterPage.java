@@ -13,99 +13,188 @@ public class RegisterPage extends BasePage {
         PageFactory.initElements(driver, this);
     }
 
-    // Elements
+//	  =====================
+//	  Elements
+//	  =====================
+    
     @FindBy(xpath = "//form[@action='/auth/register']")
-    public WebElement registerForm;
+    private WebElement registerForm;
 
     @FindBy(xpath = "//form[@action='/auth/register']//input[@name='name']")
-    public WebElement txtName;
+    private WebElement nameField;
 
     @FindBy(xpath = "//form[@action='/auth/register']//input[@name='email']")
-    public WebElement txtEmail;
+    private WebElement emailField;
 
     @FindBy(id = "password")
-    public WebElement txtPassword;
+    private WebElement passwordField;
 
     @FindBy(xpath = "//form[@action='/auth/register']//button[@type='submit']")
-    public WebElement btnCreateAccount;
+    private WebElement btnCreateAccount;
 
     @FindBy(xpath = "//a[@href='/auth/login']")
-    public WebElement lnkLogin;
+    private WebElement lnkLogin;
 
     @FindBy(xpath = "//div[contains(@class,'alert-danger')]")
-    WebElement lblError;
+    private WebElement lblError;
 
-    // Basic Actions
+//	  =====================
+//	  Navigation
+//	  =====================
+    
+    public DashboardPage register(String name, String email, String password) {
+        fillRegistrationForm(name, email, password);
+        submitRegistration();
+        return new DashboardPage(driver);
+    }
+    
+//	  =====================
+//	  Action
+//	  =====================
+    
     public void enterName(String name) {
-        type(txtName, name);
+        type(nameField, name);
     }
+    
     public void enterEmail(String email) {
-        type(txtEmail, email);
+        type(emailField, email);
     }
+    
     public void enterPassword(String password) {
-        type(txtPassword, password);
+        type(passwordField, password);
     }
+    
     public void clickCreateAccount() {
         click(btnCreateAccount);
     }
-    public void clickLoginLink() {
+    
+    public LoginPage clickLoginLink() {
         click(lnkLogin);
+        return new LoginPage(driver);
     }
-    public String getErrorMessage() {
-        return lblError.getText();
-    }
-    public boolean isRegisterFormDisplayed() {
-        return registerForm.isDisplayed();
-    }
-
-    // Password validation flow (via alert)
-    public String invalidPassword(String name, String email, String password) {
-        type(txtName, name);
-        type(txtEmail, email);
-        type(txtPassword, password);
-        clickCreateAccount();
-        return waitForAlert();
-    }
-
-    // Complete Registration
-    public void register(String name, String email, String password) {
+    
+    private void fillRegistrationForm(String name,String email,String password){
         enterName(name);
         enterEmail(email);
         enterPassword(password);
+    }
+    private void submitRegistration() {
         clickCreateAccount();
     }
-
-    // Partial submissions for empty-field tests
+    
     public void submitWithEmptyName(String email, String password) {
-        type(txtEmail, email);
-        type(txtPassword, password);
-        clickCreateAccount();
+        enterEmail(email);
+        enterPassword(password);
+        submitRegistration();
     }
+    
     public void submitWithEmptyEmail(String name, String password) {
-        type(txtName, name);
-        type(txtPassword, password);
-        clickCreateAccount();
-    }
-    public void submitWithInvalidEmailFormat(String name, String invalidEmail, String password) {
-        type(txtName, name);
-        type(txtEmail, invalidEmail);
-        type(txtPassword, password);
-        clickCreateAccount();
-    }
-    public void submitWithEmptyPassword(String name, String email) {
-        type(txtName, name);
-        type(txtEmail, email);
-        clickCreateAccount();
+        enterName(name);
+        enterPassword(password);
+        submitRegistration();
     }
 
-    // Native HTML5 validation helpers
-    public String getFieldValidationMessage(WebElement field) {
+    public void submitWithEmptyPassword(String name, String email) {
+        enterName(name);
+        enterEmail(email);
+        submitRegistration();
+    }
+
+    public void submitWithInvalidEmailFormat(String name, String invalidEmail, String password) {
+        fillRegistrationForm(name, invalidEmail, password);
+        submitRegistration();
+    }
+    
+    
+//	  =====================
+//	  Getters
+//	  =====================
+     
+    public String getErrorMessage() {
+    	return getText(lblError);
+    }
+
+    public String registerWithInvalidPassword(String name, String email, String password) {
+        fillRegistrationForm(name, email, password);
+        submitRegistration();
+        return waitForAlert();
+    }
+    
+    private String getFieldValidationMessage(WebElement field) {
         return (String) ((JavascriptExecutor) driver)
                 .executeScript("return arguments[0].validationMessage;", field);
     }
+    
+    public String getNameValidationMessage() {
+        return getFieldValidationMessage(nameField);
+    }
+
+    public String getEmailValidationMessage() {
+        return getFieldValidationMessage(emailField);
+    }
+
+    public String getPasswordValidationMessage() {
+        return getFieldValidationMessage(passwordField);
+    }
+    
+    public String getName() {
+        return getAttribute(nameField, "value");
+    }
+
+    public String getEmail() {
+        return getAttribute(emailField, "value");
+    }
+
+    public String getPassword() {
+        return getAttribute(passwordField, "value");
+    }
+//	  =====================
+//	  Validations
+//	  =====================
+    
+    public boolean isRegisterFormDisplayed() {
+        return isDisplayed(registerForm);
+    }
+
     public boolean isFieldInvalid(WebElement field) {
         Boolean isValid = (Boolean) ((JavascriptExecutor) driver)
                 .executeScript("return arguments[0].checkValidity();", field);
         return !isValid;
+    }
+    
+    public boolean isNameFieldInvalid() {
+        return isFieldInvalid(nameField);
+    }
+
+    public boolean isEmailFieldInvalid() {
+        return isFieldInvalid(emailField);
+    }
+
+    public boolean isPasswordFieldInvalid() {
+        return isFieldInvalid(passwordField);
+    }
+    
+    public boolean isCreateAccountButtonDisplayed() {
+        return isDisplayed(btnCreateAccount);
+    }
+
+    public boolean isCreateAccountButtonEnabled() {
+        return isEnabled(btnCreateAccount);
+    }
+
+    public boolean isLoginLinkDisplayed() {
+        return isDisplayed(lnkLogin);
+    }
+
+    public boolean isNameFieldDisplayed() {
+        return isDisplayed(nameField);
+    }
+
+    public boolean isEmailFieldDisplayed() {
+        return isDisplayed(emailField);
+    }
+
+    public boolean isPasswordFieldDisplayed() {
+        return isDisplayed(passwordField);
     }
 }

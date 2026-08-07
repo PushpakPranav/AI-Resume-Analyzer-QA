@@ -6,95 +6,181 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
 public class AtsResultPage extends BasePage{
-	JdMatchResultPage jdmatchresultpage;
 	public AtsResultPage(WebDriver driver) {
 		super(driver);
-		PageFactory.initElements(driver,this);
-		jdmatchresultpage = new JdMatchResultPage(driver);
+		PageFactory.initElements(driver, this);
 	}
 	
-	//Elements
-	@FindBy(id="main-navbar") WebElement mainNavbar;
-	@FindBy(id = "resume-filename-badge") WebElement resumeFileName;
-	@FindBy(id = "detected-domain-badge") WebElement detectedDomain;
-	@FindBy(id = "ats-score-value") WebElement atsScoreValue;
-	@FindBy(id = "ats-grade-value") WebElement atsGradeValue;
-	@FindBy(id = "ats-matched-count") WebElement atsMatchedCount;
-	@FindBy(id = "ats-matched-skills-block") WebElement atsMatchedSkillsBlock;
-	@FindBy(id = "ats-missing-count") WebElement atsMissingCount;
-	@FindBy(id ="ats-missing-skills-block") WebElement atsMissingSkillsBlock;
-	@FindBy(id = "ats-score-progress") WebElement atsScoreProgressBar;
-	@FindBy(id="ai-summary-block") WebElement aiSummaryBlock;
-	@FindBy(id="ai-summary-text") WebElement aiSummaryText;
+//	  =====================
+//	  Elements
+//	  =====================
 	
-	@FindBy(id = "jd-match-form-card") WebElement jdFormBlock;
-	@FindBy(id ="jd-textarea") WebElement jdTextArea;
-	@FindBy(id="jd-btn") WebElement jdAnalyzeBtn;
+	@FindBy(id="main-navbar")
+	private WebElement mainNavbar;
 	
-	@FindBy(id="upload-another-link") WebElement uploadAnotherBtn;
+	@FindBy(id = "resume-filename-badge")
+	private WebElement resumeFileName;
+
+	@FindBy(id = "detected-domain-badge")
+	private WebElement detectedDomain;
+
+	@FindBy(id = "ats-score-value")
+	private WebElement atsScoreValue;
+
+	@FindBy(id = "ats-grade-value")
+	private WebElement atsGradeValue;
+
+	@FindBy(id = "ats-matched-count")
+	private WebElement atsMatchedCount;
+
+	@FindBy(id = "ats-matched-skills-block")
+	private WebElement atsMatchedSkillsBlock;
+
+	@FindBy(id = "ats-missing-count")
+	private WebElement atsMissingCount;
+
+	@FindBy(id ="ats-missing-skills-block")
+	private WebElement atsMissingSkillsBlock;
+
+	@FindBy(id = "ats-score-progress")
+	private WebElement atsScoreProgressBar;
+
+	@FindBy(id="ai-summary-block")
+	private WebElement aiSummaryBlock;
+
+	@FindBy(id="ai-summary-text")
+	private WebElement aiSummaryText;
 	
+	@FindBy(id = "jd-match-form-card")
+	private WebElement jdFormBlock;
 	
+	@FindBy(id ="jd-textarea")
+	private WebElement jdTextArea;
 	
+	@FindBy(id="jd-btn")
+	private WebElement jdAnalyzeBtn;
 	
+	@FindBy(id="upload-another-link")
+	private WebElement uploadAnotherBtn;
 	
+//	  =====================
+//	  Methods
+//	  =====================
 	
-	
-	
-	
-	
-	//Methods 
-	public boolean isResultPageLoaded() {
-	    return isDisplayed(mainNavbar)
-	            && isDisplayed(atsScoreValue)
-	            && isDisplayed(detectedDomain)
-	            && isDisplayed(aiSummaryText);
+//	  =====================
+//	  Navigations
+//	  =====================
+	public HomePage clickUploadAnotherBtn(){
+	    click(uploadAnotherBtn);
+	    return new HomePage(driver);
 	}
-	public boolean isMainNavbarDisplayed() {
-		return isDisplayed(mainNavbar);
+	
+	public JdMatchResultPage enterJdAndAnalyze(String text) {
+		enterJdText(text);
+		clickJdAnalyzeBtn();
+		return new JdMatchResultPage(driver);
 	}
+	
+//	  =====================
+//	  Actions
+//	  =====================
+	
+	public void enterJdText(String jdText) {
+		jdTextArea.clear();
+		type(jdTextArea, jdText);
+	}
+	
+	public void clickJdAnalyzeBtn() {
+		scrollToElement(jdAnalyzeBtn);
+		click(jdAnalyzeBtn);
+	}
+	
+//	  =====================
+//	  Getters
+//	  =====================
 	
 	public String getResumeFileName() {
 		return getText(resumeFileName);
-	}
-	
-	public boolean isDetectedDomainDisplayed() {
-		return isDisplayed(detectedDomain);	
 	}
 	
 	public String getDetectedDomain() {
 		return getText(detectedDomain);
 	}
 	
-	public boolean isAtsScoreValueDisplayed() {
-		return isDisplayed(atsScoreValue);
-	}
 	public int getAtsScoreValue() {
-		return Integer.parseInt(getText(atsScoreValue));
+		return getPercentage(atsScoreValue);
 	}
 	
-	public boolean isAtsGradeValueDisplayed() {
-		return isDisplayed(atsGradeValue);
-	}
 	public String getAtsGradeValue() {
 		return getText(atsGradeValue);
 	}
-	public boolean isAtsMatchedCountDisplayed() {
-		return isDisplayed(atsMatchedCount);
+	
+	public String getAiSummaryText() {
+		return getText(aiSummaryText);
 	}
 	
-	public boolean isAtsMatchedSkillsblockDisplayed() {
-		return isDisplayed(atsMatchedSkillsBlock);
+	public int getAtsMissingCount() {
+		return Integer.parseInt(getText(atsMissingCount));
+	}
+	
+	public String getJdTextAreaPlaceholder() {
+		return getAttribute(jdTextArea, "placeholder");
+	}
+	
+	public String getJdText() {
+		return getAttribute(jdTextArea, "value");
+	}
+	
+	public String getProgressBarValue() {
+	    return getAttribute(atsScoreProgressBar, "aria-valuenow");
 	}
 	
 	public int getAtsMatchedCount() {
 	    return Integer.parseInt(getText(atsMatchedCount));
 	}
+	
+	
+	
+	
+//	  =====================
+//	  Validations
+//	  =====================
+	
+	public boolean isResultPageLoaded() {
+	    return isDisplayed(mainNavbar)
+	            && isDisplayed(atsScoreValue)
+	            && isDisplayed(detectedDomain)
+	            && isDisplayed(aiSummaryText);
+	}
+	
+	public boolean isMainNavbarDisplayed() {
+		return isDisplayed(mainNavbar);
+	}
+	
+	public boolean isDetectedDomainDisplayed() {
+		return isDisplayed(detectedDomain);	
+	}
+	
+	public boolean isAtsScoreValueDisplayed() {
+		return isDisplayed(atsScoreValue);
+	}
+	
+	public boolean isAtsGradeValueDisplayed() {
+		return isDisplayed(atsGradeValue);
+	}
+	
+	public boolean isAtsMatchedCountDisplayed() {
+		return isDisplayed(atsMatchedCount);
+	}
+	
+	public boolean isAtsMatchedSkillsBlockDisplayed() {
+		return isDisplayed(atsMatchedSkillsBlock);
+	}
+	
 	public boolean isAtsMissingCountDisplayed() {
 		return isDisplayed(atsMissingCount);
 	}
-	public int getAtsMissingCount() {
-		return Integer.parseInt(getText(atsMissingCount));
-	}
+	
 	public boolean isAtsMissingSkillsBlockDisplayed() {
 		return isDisplayed(atsMissingSkillsBlock);
 	}
@@ -109,63 +195,25 @@ public class AtsResultPage extends BasePage{
 	public boolean isAiSummaryBlockDisplayed() {
 		return isDisplayed(aiSummaryBlock);
 	}
-	public String getAiSummaryText() {
-		return getText(aiSummaryText);
-	}
 	
 	public boolean isJDMatchFormDisplayed() {
 		return isDisplayed(jdFormBlock);
 	}
-	public void enterJdText(String jdText) {
-		jdTextArea.clear();
-		type(jdTextArea,jdText);
-	}
+	
 	public boolean isJDTextAreaEnabled() {
 		return isEnabled(jdTextArea);
 	}
 	
-	public String getJdTextAreaPlaceholder() {
-		return getAtribute(jdTextArea,"placeholder");
-	}
 	public boolean isJdAnalyzeBtnEnabled() {
 		return isEnabled(jdAnalyzeBtn);
 	}
 	
-	public void clickJdAnalyzeBtn() {
-		scrollToElement(jdAnalyzeBtn);
-		click(jdAnalyzeBtn);
-	}
 	public boolean isJdAnalyzeBtnDisplayed() {
 		return isDisplayed(jdAnalyzeBtn);
 	}
 	
 	public boolean isUploadAnotherBtnDisplayed() {
 		return isDisplayed(uploadAnotherBtn);
-	}
-	public HomePage clickUploadAnotherBtn()
-	{
-	    click(uploadAnotherBtn);
-	    return new HomePage(driver);
-	}
+	}	
 
-	public String getJDText() {
-		
-		return getAtribute(jdTextArea,"value");
-	}
-	
-	public String getProgressBarValue() {
-	    return getAtribute(atsScoreProgressBar, "aria-valuenow");
-	}
-
-	public JdMatchResultPage enterJdAndAnalyze(String text) {
-		enterJdText(text);
-		clickJdAnalyzeBtn();
-		return jdmatchresultpage;
-	}
-	
-	
-
-	
-	
-	
 }

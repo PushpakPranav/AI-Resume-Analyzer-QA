@@ -22,28 +22,44 @@ public class BasePage {
 	private static final Path DOWNLOAD_DIR = Paths.get(System.getProperty("user.dir"), "Downloads");
 	
 	public BasePage(WebDriver driver) {
-		this.driver = driver;
-		
-	}
-	public void click(WebElement ele) {
-		ele.click();
+		this.driver = driver;	
 	}
 	
-	public void type(WebElement ele,String txt) {
-		ele.clear();
-		ele.sendKeys(txt);
+	public void scrollToElement(WebElement ele) {
+		Actions action = new Actions(driver);
+		action.moveToElement(ele).perform();
+
+	}
+	
+	public void click(WebElement element) {
+	    scrollToElement(element);
+	    element.click();
+	}
+	
+	public void type(WebElement element, String text) {
+	    element.clear();
+	    element.sendKeys(text);
 	}
 	
 	public String getText(WebElement ele) {
 		return ele.getText();
 	}
 	
-
-	
-	public boolean isDisplayed(WebElement ele) {
-		return ele.isDisplayed();
-		
+	protected int getPercentage(WebElement element){
+	    return Integer.parseInt(
+	            getText(element)
+	            .replace("%","")
+	            .trim());
 	}
+	
+	public boolean isDisplayed(WebElement element) {
+	    try {
+	        return element.isDisplayed();
+	    } catch (Exception e) {
+	        return false;
+	    }
+	}
+	
 	public boolean isDisplayedSafely(By locator, int timeoutSeconds) {
 	    try {
 	        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
@@ -52,13 +68,9 @@ public class BasePage {
 	        return false;
 	    }
 	}
-	public void scrollToElement(WebElement ele) {
-	Actions action = new Actions(driver);
-	action.moveToElement(ele).perform();
-
-	}
-	public String getAtribute(WebElement ele, String string) {
-		return ele.getAttribute(string);
+	
+	public String getAttribute(WebElement ele, String attributeName) {
+		return ele.getAttribute(attributeName);
 	}
 	
 	public boolean isEnabled(WebElement ele) {
@@ -75,25 +87,25 @@ public class BasePage {
 	
 	
 	public void deleteOldReports() throws IOException {
-    
+		// Delete previously downloaded ATS reports
 
-    // Delete old files
-    Files.list(DOWNLOAD_DIR)
-    .filter(path -> path.getFileName().toString().startsWith("ATS_Report"))
-    .forEach(path -> {
-        try {
-            Files.delete(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    });
+		try (var files = Files.list(DOWNLOAD_DIR)) {
+		    files.filter(path -> path.getFileName().toString().startsWith("ATS_Report"))
+		         .forEach(path -> {
+		             try {
+		                 Files.deleteIfExists(path);
+		             } catch (IOException e) {
+		            	 System.err.println("Unable to delete: " + path);
+		             }
+		         });
+		}
 	}
 	
-	public void waitUntillPdfDownloads() {
+	public void waitUntilPdfDownloads(){
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         // Wait until any PDF appears in the Downloads folder
-        wait.until(driver -> {
+        wait.until(d -> {
          File[] pdfFiles = DOWNLOAD_DIR.toFile().listFiles((dir, name) ->
                     name.startsWith("ATS_Report")
                     && name.endsWith(".pdf")
@@ -106,7 +118,7 @@ public class BasePage {
 	public File clickDownloadReport(WebElement ele) throws IOException {
 	    deleteOldReports();
 	    click(ele);
-	    waitUntillPdfDownloads();
+	    waitUntilPdfDownloads();
 
 	  
 	    File[] pdfFiles = DOWNLOAD_DIR.toFile().listFiles(
@@ -118,24 +130,5 @@ public class BasePage {
 	    }
 
 	    return pdfFiles[0];
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	}	
 }

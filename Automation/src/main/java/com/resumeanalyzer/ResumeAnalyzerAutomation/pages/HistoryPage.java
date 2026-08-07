@@ -18,77 +18,168 @@ public class HistoryPage extends BasePage{
 		PageFactory.initElements(driver, this);
 	}
 	
-	//Elements
-	@FindBy(id="history-title") WebElement historyPageHeader;
-	@FindBy(id="resume-filename") WebElement resumeFileName;
-	@FindBy(id="dashboard-btn") WebElement dashboardPageBtn;
-	@FindBy(id="analysis-list") WebElement analysisList;
+//	  =====================
+//	  Elements
+//	  =====================
 	
-	@FindBy(xpath="//span[starts-with(@id,'match-percentage')]") List<WebElement> matchPercentage;
-	@FindBy(xpath="//div[starts-with(@id,'analysis-date')]") List <WebElement> analysisDate;
-	@FindBy(xpath="//div[starts-with(@id,'matched-skills')]") List <WebElement> matchedSkillContainer;
-	@FindBy(xpath="//a[starts-with(@id,'download-report')]") List <WebElement> downloadReportBtn;
-	@FindBy(xpath="//div[starts-with(@id,'progress-bar')]") List <WebElement> progressBar;
+	@FindBy(id="history-title")
+	private WebElement historyPageHeader;
+	
+	@FindBy(id="resume-filename")
+	private WebElement resumeFileName;
+	
+	@FindBy(id="dashboard-btn")
+	private WebElement dashboardPageBtn;
+	
+	@FindBy(id="analysis-list")
+	private WebElement analysisList;
+	
+	@FindBy(xpath="//span[starts-with(@id,'match-percentage')]")
+	private List<WebElement> matchPercentage;
+	
+	@FindBy(xpath="//div[starts-with(@id,'analysis-date')]")
+	private List<WebElement> analysisDate;
+	
+	@FindBy(xpath="//div[starts-with(@id,'matched-skills')]")
+	private List<WebElement> matchedSkillContainer;
+	
+	@FindBy(xpath="//a[starts-with(@id,'download-report')]")
+	private List<WebElement> downloadReportBtn;
+	
+	@FindBy(xpath="//div[starts-with(@id,'progress-bar')]")
+	private List<WebElement> progressBar;
+	
 	@FindBy(xpath="//div[starts-with(@id,'analysis-card')]")
-	List<WebElement> analysisCards;
+	private List<WebElement> analysisCards;
 	
+//	  =====================
+//	  Navigation
+//	  =====================
 	
-	public boolean isHistoryHeadingDisplayed() {
-		
-		return isDisplayed(historyPageHeader);
+	public DashboardPage clickDashboardBtn() {
+		click(dashboardPageBtn);
+		return new DashboardPage(driver);
+	}
+	
+//	  =====================
+//	  Action
+//	  =====================
+	
+	public File clickFirstAnalysisDownloadReport() throws IOException {
+	    if (downloadReportBtn.isEmpty()) {
+	        throw new IllegalStateException("No download report button found.");
+	    }
+
+	    return clickDownloadReport(getFirstElement(downloadReportBtn));
+	}
+	
+//	  =====================
+//	  Getters
+//	  =====================
+	
+	public int getAnalysisCount() {
+	    return analysisCards.size();
 	}
 	
 	public String getResumeFileName() {
 		return getText(resumeFileName);
 	}
-	public DashboardPage clickDashboardBtn() {
-		click(dashboardPageBtn);
-		return new DashboardPage(driver);
+	
+	private WebElement getFirstElement(List<WebElement> elements) {
+	    if (elements.isEmpty()) {
+	        throw new IllegalStateException("Element not found.");
+	    }
+	    return elements.get(0);
+	}
+
+	private String getFirstElementText(List<WebElement> elements) {
+	    return getText(getFirstElement(elements));
+	}
+	
+	public String getFirstAnalysisMatchPercentage() {
+	    return getFirstElementText(matchPercentage);
+	}
+
+	public String getFirstAnalysisDate() {
+	    return getFirstElementText(analysisDate);
+	}
+	
+	
+	
+	public int getDownloadReportButtonCount() {
+	    return downloadReportBtn.size();
+	}
+	
+	private List<WebElement> getMatchedSkillsElements() {
+
+	    if (matchedSkillContainer.isEmpty()) {
+	        return new ArrayList<>();
+	    }
+
+	    return matchedSkillContainer.get(0)
+	            .findElements(By.tagName("span"));
+	}
+	
+	public List<String> getFirstAnalysisMatchedSkills() {
+
+	    List<String> matchedSkills = new ArrayList<>();
+
+	    for (WebElement skill : getMatchedSkillsElements()) {
+	        matchedSkills.add(skill.getText().trim());
+	    }
+
+	    return matchedSkills;
+	}
+	
+//	  =====================
+//	  Validations
+//	  =====================
+	
+	public boolean isPageLoaded() {
+	    return isDisplayed(historyPageHeader)
+	            && isDisplayed(resumeFileName)
+	            && isDisplayed(analysisList)
+	            && isDisplayed(dashboardPageBtn);
+	}
+	
+	public boolean isHistoryHeadingDisplayed() {
+		return isDisplayed(historyPageHeader);
+	}
+	
+	public boolean isAnalysisCardDisplayed() {
+		return isDisplayed(getFirstElement(analysisCards));
 	}
 	
 	public boolean isAnalysisListDisplayed() {
 		return isDisplayed(analysisList);
 	}
 	
-	
-	public String getFirstAnalysisMatchPercentage() {
-		return getText(matchPercentage.get(0));
+	public boolean hasAnalysis() {
+	    return getAnalysisCount() > 0;
 	}
-	
-	public String getFirstAnalysisDate() {
-		return getText(analysisDate.get(0));
-		
-	}
-	
-	public List<String> getFirstAnalysisMatchedSkills() {
-		List<WebElement> skills =
-				matchedSkillContainer.get(0).findElements(By.tagName("span"));
-
-	    List<String> skillNames = new ArrayList<>();
-
-	    for (WebElement skill : skills) {
-	        skillNames.add(skill.getText());
-	    }
-
-	    return skillNames;
-	}
-	
-	public File clickFirstAnalysisDownloadReport() throws IOException {
-		return clickDownloadReport(downloadReportBtn.get(0));
-	}
-	
 	
 	public boolean isFirstAnalysisProgressBarDisplayed() {
-		return isDisplayed(progressBar.get(0));
+		return isDisplayed(getFirstElement(progressBar));
 	}
 	
-	public int getAnalysisCount() {
-	    return analysisCards.size();
+	public boolean isResumeFileNameDisplayed() {
+	    return isDisplayed(resumeFileName);
 	}
-	
-	
-	
-	
-	
 
+	public boolean isDashboardButtonDisplayed() {
+	    return isDisplayed(dashboardPageBtn);
+	}
+	
+	public boolean isDownloadReportButtonDisplayed() {
+	    try {
+	        return isDisplayed(getFirstElement(downloadReportBtn));
+	    } catch (IllegalStateException e) {
+	        return false;
+	    }
+	}
+	
+	public boolean hasDownloadReport() {
+	    return getDownloadReportButtonCount() > 0;
+	}
+	
 }

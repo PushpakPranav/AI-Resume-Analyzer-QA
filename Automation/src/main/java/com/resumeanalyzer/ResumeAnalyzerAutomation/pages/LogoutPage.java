@@ -1,24 +1,31 @@
 package com.resumeanalyzer.ResumeAnalyzerAutomation.pages;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.PageFactory;
 
-import components.NavbarComponent;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 
 public class LogoutPage extends BasePage {
 
-    NavbarComponent navbar;
+    private final NavbarComponent navbar;
 
     public LogoutPage(WebDriver driver) {
         super(driver);
         navbar = new NavbarComponent(driver);
-        PageFactory.initElements(driver, this);
     }
-
-    public void logout() {
+    
+ // =====================
+ // Actions
+ // =====================
+    
+    public LoginPage logout() {
         navbar.clickAvatar();
         navbar.clickLogout();
+        return new LoginPage(driver);
     }
+
+ // =====================
+ // Validations
+ // =====================
 
     public boolean isLoginDisplayed() {
         return navbar.isLoginDisplayed();
@@ -27,4 +34,9 @@ public class LogoutPage extends BasePage {
     public boolean isSignUpDisplayed() {
         return navbar.isSignUpDisplayed();
     }
+    
+    public boolean isLoggedOut() {
+        return isLoginDisplayed() && isSignUpDisplayed();
+    }
+    
 }

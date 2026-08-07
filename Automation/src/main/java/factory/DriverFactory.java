@@ -1,6 +1,7 @@
 package factory;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -18,16 +19,16 @@ public class DriverFactory {
 		String downloadPath = new File(System.getProperty("user.dir"), "Downloads")
 		        .getAbsolutePath();
 		
-		HashMap<String,Object> prefs = new HashMap<>();
+		Map<String,Object> prefs = new HashMap<>();
 		
 		prefs.put("download.default_directory", downloadPath);
 		prefs.put("download.prompt_for_download", false);
 		prefs.put("plugins.always_open_pdf_externally", true);
 		
-		ChromeOptions option = new ChromeOptions();		
-		option.setExperimentalOption("prefs", prefs);
+		ChromeOptions options = new ChromeOptions();		
+		options.setExperimentalOption("prefs", prefs);
 		
-		driver = new ChromeDriver(option);
+		driver = new ChromeDriver(options);
 		driver.manage().window().maximize();
 		
 		return driver;
@@ -42,6 +43,7 @@ public class DriverFactory {
 	public static void quitBrowser() {
 		if(driver != null) {
 		    driver.quit();
+		    driver = null;
 		}
 	}
 

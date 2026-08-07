@@ -8,88 +8,163 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
-import components.NavbarComponent;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 
 public class DashboardPage extends BasePage{
-	NavbarComponent navbar;
-	HistoryPage historyPage;
+	private final NavbarComponent navbar;
 	public DashboardPage(WebDriver driver) {
 		super(driver);
-		navbar = new NavbarComponent(driver);
-		historyPage = new HistoryPage(driver);
 		PageFactory.initElements( driver, this);
+		navbar = new NavbarComponent(driver);
 	}
 	
 	
-	//Elements
+//	  =====================
+//	  Elements
+//	  =====================
 	
-	@FindBy(xpath="//h6[contains(normalize-space(),'Resume History')]") WebElement resumeHistoryHeading;
-	@FindBy(id="resume-history-table") WebElement resumeHistoryTable;
-	@FindBy(id="scoreChart") WebElement scoreHistoryHeading;
-	@FindBy(id="welcome-text") WebElement welcomeMessage;
+	@FindBy(xpath="//h6[contains(normalize-space(),'Resume History')]")
+	private WebElement resumeHistoryHeading;
+	
+	@FindBy(id="resume-history-table")
+	private WebElement resumeHistoryTable;
+	
+	@FindBy(id="scoreChart")
+	private WebElement scoreHistoryHeading;
+	
+	@FindBy(id="welcome-text")
+	private WebElement welcomeMessage;
+	
 	@FindBy(xpath="//table[@id='resume-history-table']//tbody/tr")
-	List<WebElement> resumeRows;
+	private List<WebElement> resumeRows;
 
 	@FindBy(xpath="//table[@id='resume-history-table']//tbody/tr[1]/td[1]")
-	WebElement resumeFileName;
+	private WebElement resumeFileName;
 
 	@FindBy(xpath="//table[@id='resume-history-table']//tbody/tr[1]/td[3]")
-	WebElement atsScore;
+	private WebElement atsScore;
 
 	@FindBy(xpath="//table[@id='resume-history-table']//tbody/tr[1]/td[5]")
-	WebElement uploadDate;
+	private WebElement uploadDate;
 
 	@FindBy(xpath="//table[@id='resume-history-table']//tbody/tr[1]/td[4]")
-	WebElement resumeStatus;
+	private WebElement resumeStatus;
 
 	@FindBy(xpath="//button[contains(@id,'resume-delete-btn-')]")
-	WebElement deleteResumeBtn;
+	private WebElement deleteResumeBtn;
+	
 	@FindBy(xpath = "//div[contains(text(),'Resume deleted successfully.')]")
-	WebElement deleteSuccessMessage;
+	private WebElement deleteSuccessMessage;
 
 	@FindBy(id = "upload-first-resume-btn")
-	WebElement uploadResumeBtn;
+	private WebElement uploadResumeBtn;
 
 	@FindBy(id = "stat-total-resumes-value")
-	WebElement totalResumeCount;
+	private WebElement totalResumeCount;
 
 	@FindBy(id = "stat-avg-score-value")
-	WebElement avgScore;
+	private WebElement avgScore;
 
 	@FindBy(id = "stat-best-score-value")
-	WebElement bestScore;
+	private WebElement bestScore;
 
 	@FindBy(id = "stat-domains-tried-value")
-	WebElement domainsTried;
+	private WebElement domainsTried;
 
 	@FindBy(id = "domains-detected-card")
-	WebElement domainsDetectedCard;
+	private WebElement domainsDetectedCard;
 
 	
 	@FindBy(xpath = "//a[starts-with(@id ,'resume-history-btn')]")
-	List<WebElement> historyBtn;
+	private List<WebElement> historyBtn;
 	
 	
 	
 	private final By resumeHistoryTableLocator = By.id("resume-history-table");
 	
 	
+//	  =====================
+//	  Navigation
+//	  =====================
 	
-	
-	public String verifyWelcomeMessage() {
-		return getText(welcomeMessage);
-		
-		
+	public HistoryPage clickFirstHistoryButton() {
+		scrollToElement(historyBtn.get(0));
+		click(historyBtn.get(0));
+		return new HistoryPage(driver);
 	}
+	
+//	  =====================
+//	  Action
+//	  =====================
+	
+	public void clickHome() {
+		navbar.clickHome();
+	}
+	
+	public void clickDeleteResume() {
+		scrollToElement(deleteResumeBtn);
+	    click(deleteResumeBtn);
+	}
+	
+	public void confirmDelete() {
+	    driver.switchTo().alert().accept();
+	}
+	
+	public void cancelDelete() {
+	    driver.switchTo().alert().dismiss();
+	}
+	
+//	  =====================
+//	  Getters
+//	  =====================
+	
+	public String getWelcomeMessage() {
+		return getText(welcomeMessage);	
+	}
+	
+	public String getResumeFileName() {
+	    return getText(resumeFileName);
+	}
+	
+	public int getResumeHistoryCount() {
+		return resumeRows == null ? 0 : resumeRows.size();
+	}
+	
+	public String getNoResumeMessage() {
+	    return getText(uploadResumeBtn);
+	}
+	
+	public String getTotalResumeCount() {
+	    return getText(totalResumeCount);
+	}
+	public String getAverageScore() {
+	    return getText(avgScore);
+	}
+	
+	public String getBestScore() {
+	    return getText(bestScore);
+	}
+	
+	public String getDomainsTried() {
+	    return getText(domainsTried);
+	}
+	
+//	  =====================
+//	  Validations
+//	  =====================
 	
 	public boolean isUploadBtnDisplayed() {
 		return isDisplayed(uploadResumeBtn);
 	}
 	
-	public boolean isResumeHistoryHeadingDisplayed() {
-		return isDisplayed(resumeHistoryHeading);
-		
+	public boolean isScoreHistoryDisplayed() {
+	    return isDisplayed(scoreHistoryHeading);
 	}
+	
+	public boolean isResumeHistoryHeadingDisplayed() {
+		return isDisplayed(resumeHistoryHeading);	
+	}
+	
 	public boolean isResumeHistoryTableDisplayed() {
 	    return isDisplayedSafely(resumeHistoryTableLocator, 10);
 	}
@@ -97,41 +172,23 @@ public class DashboardPage extends BasePage{
 	public boolean isLoginDisplayed() {
 		return navbar.isLoginDisplayed();
 	}
-	
-	public void clickHome() {
-		navbar.clickHome();
-	}
 
 	public boolean isSignUpDisplayed() {
-		return navbar.isSignUpDisplayed();
-		
+		return navbar.isSignUpDisplayed();	
 	}
 
 	public boolean isUsernameDisplayed() {
-		return isDisplayed(welcomeMessage);
-		
+		return isDisplayed(welcomeMessage);	
 	}
 
 	public boolean isUserAvatarDisplayed() {
 		return navbar.isUserAvatarDisplayed();
 	}
 	 
-	public boolean isResumePresent() {
-	    return resumeRows.size() > 0;
+	public boolean hasResumeHistory() {
+	    return !resumeRows.isEmpty();
 	}
-	public void clickDeleteResume() {
-		scrollToElement(deleteResumeBtn);
-	    click(deleteResumeBtn);
-	}
-	public void confirmDelete() {
-	    driver.switchTo().alert().accept();
-	}
-	public void cancelDelete() {
-	    driver.switchTo().alert().dismiss();
-	}
-	public String getResumeFileName() {
-	    return getText(resumeFileName);
-	}
+	
 	public boolean isUploadDateDisplayed() {
 	    return isDisplayed(uploadDate);
 	}
@@ -141,36 +198,21 @@ public class DashboardPage extends BasePage{
 	public boolean isResumeStatusDisplayed() {
 	    return isDisplayed(resumeStatus);
 	}
-	public int getResumeHistoryCount() {
-	    return resumeRows.size();
-	}
+	
 	public boolean isDeleteSuccessMessageDisplayed() {
 	    return isDisplayed(deleteSuccessMessage);
 	}
-	public String getNoResumeMessage() {
-	    return getText(uploadResumeBtn);
-	}
-	public String getTotalResumeCount() {
-	    return getText(totalResumeCount);
-	}
-	public String getAverageScore() {
-	    return getText(avgScore);
-	}
-	public String getBestScore() {
-	    return getText(bestScore);
-	}
-	public String getDomainsTried() {
-	    return getText(domainsTried);
-	}
+	
 	public boolean isDomainsDetectedCardDisplayed() {
 	    return isDisplayed(domainsDetectedCard);
 	}
-	public HistoryPage clickFirstHistoryButton() {
-		scrollToElement(historyBtn.get(0));
-		click(historyBtn.get(0));
-		return new HistoryPage(driver);
+	
+	public boolean isDeleteResumeButtonDisplayed() {
+	    return isDisplayed(deleteResumeBtn);
 	}
 	
-	
+	public boolean isHistoryButtonDisplayed() {
+	    return !historyBtn.isEmpty() && historyBtn.get(0).isDisplayed();
+	}
 	
 }
