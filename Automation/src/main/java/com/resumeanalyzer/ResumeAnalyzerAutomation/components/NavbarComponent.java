@@ -1,4 +1,4 @@
-package components;
+package com.resumeanalyzer.ResumeAnalyzerAutomation.components;
 
 import java.util.List;
 
@@ -9,6 +9,10 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.BasePage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.DashboardPage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LoginPage;
+import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.RegisterPage;
 
 public class NavbarComponent extends BasePage{
 
@@ -16,6 +20,10 @@ public class NavbarComponent extends BasePage{
 		super(driver);
 		PageFactory.initElements(driver, this);	
 		}
+	
+//	  =====================
+//	  Elements
+//	  =====================
 	
 	private final By loginBtnLocator = By.linkText("Login");
     private final By signUpBtnLocator = By.linkText("Sign Up");
@@ -27,35 +35,67 @@ public class NavbarComponent extends BasePage{
     @FindBy(id="dark-mode-toggle-btn") WebElement darkModeToggleBtn;
     @FindBy(id="nav-brand-logo") WebElement brandLogo;
     
+//	  =====================
+//	  Navigations
+//	  =====================
     
-    public void clickLogin() {
+    public LoginPage clickLogin() {
         driver.findElement(loginBtnLocator).click();
+        return new LoginPage(driver);
     }
-
-    public void clickSignUp() {
+    
+    public LoginPage clickLogout() {
+    	click(logoutLink);
+    	return new LoginPage(driver);
+    }
+    
+    public RegisterPage clickSignUp() {
         driver.findElement(signUpBtnLocator).click();
+        return new RegisterPage(driver);
     }
-    public void clickDashboard() {
+    
+    public DashboardPage clickDashboard() {
     	click(dashboardBtn);
+    	return new DashboardPage(driver);
     }
-    public void clickHome() {
+    
+    public HomePage clickHome() {
     	click(homeBtn);
+    	return new HomePage(driver);
     }
+    
+//	  =====================
+//	  Action
+//	  =====================
+    
     public void clickAvatar() {
     	click(userAvatarDropdown);
     }
+    
     public void clickMyResumes() {
     	click(myResumesLink);
     }
-    public void clickLogout() {
-    	click(logoutLink);
-    }
+    
     public void clickDarkModeToggle() {
     	click(darkModeToggleBtn);
     }
+    
     public void clickBrandLogo() {
     	click(brandLogo);
     }
+    
+//	  =====================
+//	  Getters
+//	  =====================
+    
+    public String getBrandText() {
+    	return getText(brandLogo);
+    }
+    
+//	  =====================
+//	  Validations
+//	  =====================
+
     public boolean isLoginDisplayed() {
         List<WebElement> elements = driver.findElements(loginBtnLocator);
         return !elements.isEmpty() && elements.get(0).isDisplayed();

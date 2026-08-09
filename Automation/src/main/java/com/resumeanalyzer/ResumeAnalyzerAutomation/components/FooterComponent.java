@@ -1,4 +1,4 @@
-package components;
+package com.resumeanalyzer.ResumeAnalyzerAutomation.components;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -14,15 +14,25 @@ public class FooterComponent extends BasePage{
 		PageFactory.initElements(driver, this);
 	}
 	
-	//Elements 
+//	  =====================
+//	  Elements
+//	  =====================
 	@FindBy(id="site-footer") WebElement footerMessage;
  	
-
-	public boolean footerMessageDisplayed() {
-		return isDisplayed(footerMessage);
-	}
+//	  =====================
+//	  Getters
+//	  =====================
 	
 	public String getFooterMessage() {
 		return getText(footerMessage);
 	}
+	
+//	  =====================
+//	  Validations
+//	  =====================
+	
+	public boolean footerMessageDisplayed() {
+		return isDisplayed(footerMessage);
+	}
+	
 }
