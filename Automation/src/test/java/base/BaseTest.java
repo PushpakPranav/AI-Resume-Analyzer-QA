@@ -1,4 +1,5 @@
 package base;
+import java.io.IOException;
 import java.time.Duration;
 
 import org.openqa.selenium.WebDriver;
@@ -15,11 +16,14 @@ public class BaseTest {
 	
 	
 	@BeforeMethod
-    public void setup() throws Exception {
+    public void setup() throws IOException {
+		
 		config = new ConfigReader();
+		
 		DriverFactory.initializeBrowser();
+		
 		driver = DriverFactory.getDriver();
-		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		
 		driver.get(config.getProperty("url"));
     }
     @AfterMethod
