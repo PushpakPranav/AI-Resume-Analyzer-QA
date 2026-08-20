@@ -147,7 +147,7 @@ style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px soli
 </div>
 {% endif %}
 
-<input type="file" id="avatarInput" name="file" accept=".jpg,.jpeg,.png,.webp" hidden onchange="this.form.submit()">
+<input type="file" id="avatarInput" name="file" accept=".jpg,.jpeg,.png,.webp" hidden onchange="submitAvatarForm(this.form)">
 <label for="avatarInput" class="avatar-camera" id="avatar-camera-label">
 <i class="bi bi-camera-fill"></i>
 </label>
@@ -207,6 +207,38 @@ function toggleDark(){
   const ic=document.getElementById('dark-icon');
   if(ic) ic.className=t==='dark'?'bi bi-sun-fill':'bi bi-moon-stars-fill';
 })();
+
+function getCookie(name) {
+  const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return match ? decodeURIComponent(match.pop()) : '';
+}
+
+async function submitAvatarForm(form) {
+  let csrfInput = form.querySelector('input[name="csrf_token"]');
+  if (!csrfInput) {
+    csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    form.appendChild(csrfInput);
+  }
+  csrfInput.value = getCookie('csrf_token');
+
+  try {
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.avatar_url) {
+      location.reload();
+    } else {
+      alert(data.error || 'Avatar upload failed. Please try again.');
+    }
+  } catch (err) {
+    alert('Something went wrong while uploading the avatar.');
+  }
+}
 </script>
 {% block extra_js %}{% endblock %}
 </body>

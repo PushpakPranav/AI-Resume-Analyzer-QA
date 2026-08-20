@@ -23,6 +23,7 @@ async def dashboard(
     if not current_user:
         return RedirectResponse(url="/auth/login", status_code=302)
 
+
     deleted_param = request.query_params.get("deleted")
     delete_message = None
     if deleted_param == "1":

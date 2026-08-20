@@ -2,7 +2,7 @@ import os
 import json
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -12,6 +12,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 
 from app.core.database           import get_db
+from app.core.security           import csrf_token_valid
+
 from app.models.analysis         import Analysis
 from app.models.resume           import Resume
 from app.services.groq_service import groq_jd_match, groq_rewrite_bullets, groq_skill_roadmap, _grade_color
@@ -29,9 +31,13 @@ def match_resume(
     request: Request,
     resume_id: int = Form(...),
     job_description: str = Form(...),
+    csrf_token: str = Form(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not csrf_token_valid(request, csrf_token):
+        raise HTTPException(403, "Invalid or missing CSRF token")
+
     resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if not resume:
         raise HTTPException(404, "Resume not found")
@@ -102,9 +108,15 @@ def get_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=302)
+
     resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if not resume:
         raise HTTPException(404, "Resume not found")
+
+    if resume.user_id != current_user.id:
+        raise HTTPException(403, "You do not have access to this resume's history")
 
     analyses = (
         db.query(Analysis)
@@ -122,12 +134,22 @@ def get_history(
 
 
 @router.get("/report/{analysis_id}")
-def download_report(analysis_id: int, db: Session = Depends(get_db)):
+def download_report(
+    analysis_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user:
+        raise HTTPException(401, "Login required to download this report")
+
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
         raise HTTPException(404, "Analysis not found")
 
-    resume  = db.query(Resume).filter(Resume.id == analysis.resume_id).first()
+    resume = db.query(Resume).filter(Resume.id == analysis.resume_id).first()
+    if not resume or resume.user_id != current_user.id:
+        raise HTTPException(403, "You do not have access to this report")
+
     matched = analysis.matched_skills.split(",") if analysis.matched_skills else []
     missing = analysis.missing_skills.split(",") if analysis.missing_skills else []
 
@@ -204,6 +226,7 @@ def download_report(analysis_id: int, db: Session = Depends(get_db)):
             url      = item.get("course_url", "")
             platform = item.get("platform", "")
             cert     = item.get("cert", "")
+            
             valid_url = bool(url) and (url.startswith("http://") or url.startswith("https://"))
 
             line = f"<b>{skill}</b>"

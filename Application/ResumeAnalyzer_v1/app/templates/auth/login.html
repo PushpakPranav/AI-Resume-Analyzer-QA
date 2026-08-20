@@ -16,19 +16,19 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="mb-3">
             <label class="form-label fw-semibold">Email</label>
-            <input type="email" name="email" class="form-control" placeholder="you@email.com" required style="border-radius:10px;">
+            <input type="email" name="email" id="email" class="form-control" placeholder="you@email.com" required style="border-radius:10px;">
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold d-flex justify-content-between">
               <span>Password</span>
-              <a href="/auth/forgot-password" class="text-primary fw-semibold" style="font-size:.82rem;">Forgot password?</a>
+              <a href="/auth/forgot-password" id="login-forgot-password-link" class="text-primary fw-semibold" style="font-size:.82rem;">Forgot password?</a>
             </label>
-            <input type="password" name="password" class="form-control" placeholder="••••••••" required style="border-radius:10px;">
+            <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required style="border-radius:10px;">
           </div>
           <button type="submit" class="btn btn-primary w-100 mt-1" id="login-submit-btn">Login</button>
         </form>
         <p class="text-center text-muted small mt-3 mb-0">
-          Don't have an account? <a href="/auth/register" class="text-primary fw-semibold">Sign Up</a>
+          Don't have an account? <a href="/auth/register" id="login-signup-link" class="text-primary fw-semibold">Sign Up</a>
         </p>
       </div>
     </div>
@@ -37,10 +37,6 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-// Bug fix: submitted via fetch instead of a normal form POST. A failed
-// attempt only updates this page in place — the browser never navigates,
-// so no new history entry is created no matter how many attempts are
-// made. Back always goes straight to whichever page preceded this one.
 const loginForm = document.getElementById('login-form');
 const loginErrorBox = document.getElementById('login-error-box');
 const loginSubmitBtn = document.getElementById('login-submit-btn');

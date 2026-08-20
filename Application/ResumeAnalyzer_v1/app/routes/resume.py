@@ -7,7 +7,7 @@ import os
 from app.services.parser         import extract_text
 from app.services.groq_service import groq_ats_score
 from app.core.database           import get_db
-from app.core.security           import csrf_token_valid
+from app.core.security           import csrf_token_valid, generate_csrf_token, set_csrf_cookie
 from app.models.resume           import Resume
 from app.routes.auth             import get_current_user
 from app.models.user             import User
@@ -52,7 +52,8 @@ async def upload_resume(
             }
         )
 
-    safe_name = file.filename.replace(" ", "_")
+    
+    safe_name = os.path.basename(file.filename).replace(" ", "_")
     file_path = os.path.join(UPLOAD_DIR, safe_name)
 
     with open(file_path, "wb") as f:
@@ -81,7 +82,8 @@ async def upload_resume(
     db.commit()
     db.refresh(resume)
 
-    return templates.TemplateResponse(
+    csrf_token = generate_csrf_token()
+    resp = templates.TemplateResponse(
         request=request, name="result.html", context={
             "current_user":    current_user,
             "resume_id":       resume.id,
@@ -93,8 +95,11 @@ async def upload_resume(
             "ats_matched":     ats_result["matched_skills"],
             "ats_missing":     ats_result["missing_skills"],
             "summary":         ats_result["summary"],
+            "csrf_token":      csrf_token,
         }
     )
+    set_csrf_cookie(resp, csrf_token)
+    return resp
 
 
 @router.post("/delete/{resume_id}")
@@ -105,11 +110,6 @@ def delete_resume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Bug fix: this endpoint was previously GET (state-changing action via a
-    # simple link/image request) with no CSRF check and no ownership check —
-    # any resume with user_id = NULL could be deleted by anyone. It is now
-    # POST-only, requires a valid CSRF token, and requires the resume to
-    # belong to the logged-in user.
     if not csrf_token_valid(request, csrf_token):
         raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
 

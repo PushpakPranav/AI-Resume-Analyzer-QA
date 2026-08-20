@@ -11,7 +11,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY not found — set it in your .env file")
 ALGORITHM  = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 1  # 1 hour
 RESET_TOKEN_EXPIRE_MINUTES  = 15       # Forgot Password reset link validity
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -128,15 +128,6 @@ def login_lockout_seconds_remaining(identifier: str) -> int:
         return max(remaining, 1)
 
 
-# ---------------------------------------------------------------------------
-# No-cache headers for sensitive pages
-# Bug fix: login/register/forgot-password/reset-password/dashboard responses
-# had no Cache-Control header, so browsers could cache them (including
-# rendered error/lockout pages). Pressing Back would then show a stale
-# cached page instead of hitting the server again. This does NOT bypass the
-# login lockout itself (that state lives server-side, not in the browser),
-# but sensitive pages should never be cacheable by the browser.
-# ---------------------------------------------------------------------------
 
 def set_no_cache_headers(response):
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"

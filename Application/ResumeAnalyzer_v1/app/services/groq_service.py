@@ -1,8 +1,21 @@
-import json, re, os, urllib.request, urllib.error, time
+import json, re, os, urllib.request, urllib.error, time, itertools, threading
 from dotenv import load_dotenv
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+_raw_keys = os.getenv("GROQ_API_KEYS", "") or os.getenv("GROQ_API_KEY", "")
+GROQ_API_KEYS = [k.strip() for k in _raw_keys.split(",") if k.strip()]
+if not GROQ_API_KEYS:
+    raise RuntimeError("No GROQ_API_KEY(s) found in .env file")
+
+_key_cycle = itertools.cycle(GROQ_API_KEYS)
+_key_lock = threading.Lock()
+
+def _next_key():
+    """Round-robin: har call pe agli key milegi, isse load sab keys me
+    baant jaata hai — ek hi key jaldi rate-limit nahi hoti."""
+    with _key_lock:
+        return next(_key_cycle)
+
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
@@ -12,7 +25,7 @@ class GroqTruncatedError(Exception):
         super().__init__("Groq response was truncated (hit max_tokens)")
 
 
-def _build_groq_request(prompt, max_tokens, temperature, seed):
+def _build_groq_request(prompt, max_tokens, temperature, seed, api_key):
     body = json.dumps({
         "model": "llama-3.3-70b-versatile",
         "messages": [
@@ -25,38 +38,57 @@ def _build_groq_request(prompt, max_tokens, temperature, seed):
     }).encode("utf-8")
     return urllib.request.Request(
         GROQ_URL, data=body,
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_API_KEY}", "User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}", "User-Agent": "Mozilla/5.0", "Accept": "application/json"},
         method="POST"
     )
 
 
 def _call_groq(prompt, max_tokens=1500, temperature=0.1, seed=42):
-    if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY not found in .env file")
+    """Calls the Groq chat-completion endpoint, rotating across all
+    available API keys.
+    - Har key ke liye up to 3 attempts hote hain (max_tokens bump on
+      truncation, exponential backoff on transient errors).
+    - Agar current key 429 (rate-limited) de, to us key pe retry nahi hota —
+      turant agli key try hoti hai (yehi asli rotation hai).
+    - Sab keys exhaust hone par hi final error raise hota hai.
+    """
+    last_err = None
 
-    for attempt in range(3):
-        req = _build_groq_request(prompt, max_tokens, temperature, seed)
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                choice = data["choices"][0]
-                content = choice["message"]["content"]
-                if choice.get("finish_reason") == "length":
-                    raise GroqTruncatedError(content)
-                return content
-        except GroqTruncatedError:
-            if attempt == 2:
-                raise
-            max_tokens = int(max_tokens * 1.5)
-            time.sleep(1)
-        except urllib.error.HTTPError as e:
-            if attempt == 2:
-                raise RuntimeError(f"Groq API error {e.code}: {e.read().decode()}")
-            time.sleep(2 ** attempt)
-        except Exception as e:
-            if attempt == 2:
-                raise RuntimeError(f"Groq call failed: {e}")
-            time.sleep(2 ** attempt)
+    for _ in range(len(GROQ_API_KEYS)):
+        api_key = _next_key()
+
+        for attempt in range(3):
+            req = _build_groq_request(prompt, max_tokens, temperature, seed, api_key)
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    choice = data["choices"][0]
+                    content = choice["message"]["content"]
+                    if choice.get("finish_reason") == "length":
+                        raise GroqTruncatedError(content)
+                    return content
+            except GroqTruncatedError:
+                if attempt == 2:
+                    raise
+                max_tokens = int(max_tokens * 1.5)
+                time.sleep(1)
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    # Is key ka quota khatam — isi key pe retry mat karo,
+                    # bahar wale loop me agli key try hogi.
+                    last_err = RuntimeError(f"Groq 429 rate-limited on one key")
+                    break
+                if attempt == 2:
+                    last_err = RuntimeError(f"Groq API error {e.code}: {e.read().decode()}")
+                    break
+                time.sleep(2 ** attempt)
+            except Exception as e:
+                if attempt == 2:
+                    last_err = RuntimeError(f"Groq call failed: {e}")
+                    break
+                time.sleep(2 ** attempt)
+
+    raise last_err or RuntimeError("All Groq API keys failed")
 
 
 def _parse_json(text):
@@ -142,6 +174,14 @@ def _tokenize_words(text):
 
 
 def _skill_in_text(skill, norm_text, text_words):
+    """True if `skill` genuinely appears in the given text.
+    - Single-word skill ("Python"): exact whole-word match only, so "Java"
+      doesn't false-match inside "JavaScript".
+    - Multi-word skill ("MS Excel"): first try the exact phrase; if that
+      fails, strip "ms"/"microsoft" and require every remaining word to be
+      present somewhere (so "Excel" alone in the resume still counts as
+      "MS Excel" being present).
+    """
     skill_norm = _normalize(skill).strip()
     if not skill_norm:
         return False
@@ -176,6 +216,9 @@ def _verify_against_jd_and_resume(matched, missing, jd_text, resume_text):
 
 
 def _is_generic_only(matched_skills):
+    """True if every matched skill is a generic soft-skill (see
+    GENERIC_SKILLS) — used to downgrade detected_domain to "General" when
+    there's no real domain-specific evidence in the resume."""
     if not matched_skills:
         return True
     return all(skill.strip().lower() in GENERIC_SKILLS for skill in matched_skills)
@@ -195,6 +238,10 @@ def _dedupe_skill_list(skills):
 
 
 def groq_ats_score(resume_text):
+    """Standalone resume scan (no job description yet): detects domain,
+    scores 0-100, and lists matched/missing skills for that domain.
+    Returns a dict with error=True and a safe fallback payload if the Groq
+    call fails, so callers never need to handle exceptions themselves."""
     prompt = f"""You are an expert ATS resume analyzer with deep knowledge of every professional domain — Software Development, Software Testing, Data Science, DevOps, Finance, Marketing, HR, Sales, Cybersecurity, Design, etc.
 
 Analyze this resume and:
@@ -256,6 +303,12 @@ Resume:
 
 
 def groq_jd_match(resume_text, job_description):
+    """Compares a resume against a specific job description. The LLM only
+    extracts the skills the JD asks for; matched/missing classification is
+    then done deterministically in Python (_verify_against_jd_and_resume)
+    rather than trusted from the model, and match_percentage is computed
+    from that verified split. Same error-safe fallback pattern as
+    groq_ats_score."""
     prompt = f"""You are a strict ATS system analyzing a job description.
 
 TASK: Extract EVERY skill, tool, technology, or specific competency that is explicitly required or mentioned in the JD below. This is extraction only — do not check the resume yet.
@@ -278,11 +331,6 @@ Return ONLY this JSON:
         result = _call_groq_json(prompt, max_tokens=2000)
         jd_skills = _dedupe_skill_list(_ensure_list(result.get("jd_required_skills", [])))
 
-        # Classification is deterministic, not left to the LLM: every
-        # extracted JD skill is checked directly against the resume text.
-        # This guarantees every explicit JD skill lands in exactly one of
-        # matched/missing, instead of relying on the model to also get the
-        # matched/missing split right in the same pass.
         matched, missing = _verify_against_jd_and_resume(jd_skills, [], job_description, resume_text)
         missing = _remove_overlap(matched, missing)
 
@@ -325,6 +373,10 @@ Return ONLY this JSON:
 
 
 def groq_rewrite_bullets(resume_text):
+    """Finds up to 4 resume bullets that use weak language ("helped",
+    "worked on", etc.) and returns {original, improved} pairs. The
+    length/equality filter below is a second safety net on top of the
+    prompt rules, in case the model returns a trivial or unchanged bullet."""
     prompt = f"""Find complete bullet points (minimum 8 words) in this resume that use WEAK language: worked on, helped, assisted, handled, used, made, did, was responsible for, participated in.
 
 CRITICAL RULES:
@@ -358,6 +410,8 @@ _PLACEHOLDER_PATTERNS = (
 
 
 def _is_placeholder(text):
+    """True for empty/None text or hedge phrases like "not available" that
+    the model sometimes returns instead of a real course/cert name."""
     if not text or not isinstance(text, str):
         return True
     lowered = text.strip().lower()
@@ -367,6 +421,8 @@ def _is_placeholder(text):
 
 
 def _is_useless_url(url):
+    """True for a bare search-engine homepage with no query — i.e. the
+    model gave up and returned "go search for it" instead of a real link."""
     if not url or not isinstance(url, str):
         return True
     url_lower = url.lower()
@@ -377,6 +433,12 @@ def _is_useless_url(url):
 
 
 def groq_skill_roadmap(missing_skills, domain):
+    """Suggests one course/certification per missing skill (max 8). The
+    matching loop below re-maps whatever skill name the model echoes back
+    onto the original requested skill name (fuzzy substring match), so a
+    slightly reworded skill still lands correctly instead of being dropped;
+    any skill the model skipped entirely gets a generic Google-search
+    fallback appended so every requested skill always gets one item."""
     if not missing_skills:
         return []
     skills_list = missing_skills[:8]

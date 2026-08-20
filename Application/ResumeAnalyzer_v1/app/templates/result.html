@@ -27,7 +27,7 @@
               <div><div class="fw-bold text-danger fs-5" id="ats-missing-count">{{ ats_missing | length }}</div><div class="text-muted" style="font-size:.8rem;">Missing</div></div>
             </div>
             <div class="progress" style="height:12px;border-radius:8px;" id="ats-score-progress">
-              <div class="progress-bar bg-{{ grade_color }}" id="ats-score-progress-bar" style="width: {{ ats_score }} %;border-radius:8px; "></div>
+              <div class="progress-bar bg-{{ grade_color }}" id="ats-score-progress-bar" style="width:{{ ats_score }}%;border-radius:8px;"></div>
             </div>
           </div>
         </div>
@@ -57,8 +57,9 @@
         <h5 class="fw-bold mb-1"><i class="bi bi-file-text me-2 text-teal"></i>Match Against Job Description</h5>
         <p class="text-muted small mb-3">Paste any JD to get match % + skill roadmap + AI rewriting tips</p>
         {% if error %}<div class="alert alert-danger py-2" id="jd-error-alert">{{ error }}</div>{% endif %}
-        <form action="/analysis/match" method="post" id="jd-form">
+                <form action="/analysis/match" method="post" id="jd-form">
           <input type="hidden" name="resume_id" value="{{ resume_id }}" id="jd-resume-id-input">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" id="jd-csrf-input">
           <textarea class="form-control mb-3" name="job_description" id="jd-textarea" rows="9"
             placeholder="Paste the full job description here..." required
             style="border-radius:10px;font-size:.9rem;resize:vertical;"></textarea>

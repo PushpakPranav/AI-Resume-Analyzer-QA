@@ -20,6 +20,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 def validate_password(password: str):
     """Returns an error message string if password is weak, else None."""
+    if password != password.strip():
+        return "Password must not have leading or trailing spaces"
     if len(password) < 8:
         return "Password must contain at least 8 characters"
     if not re.search(r"[A-Z]", password):
@@ -28,12 +30,18 @@ def validate_password(password: str):
         return "Password must contain at least one lowercase letter"
     if not re.search(r"[0-9]", password):
         return "Password must contain at least one number"
-    if not re.search(r"[^A-Za-z0-9]", password):
+    if not re.search(r"[^A-Za-z0-9\s]", password):
         return "Password must contain at least one special character"
     return None
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):
+    """FastAPI dependency used on nearly every route to identify the logged-in
+    user from the access_token cookie. Returns None (never raises) for a
+    logged-out visitor, missing/expired/tampered token, or a token whose
+    user was since deleted — callers treat None as "not authenticated" and
+    decide themselves whether to redirect, 401, or just render a logged-out
+    view (see home() in main.py for the logged-out-is-fine case)."""
     token = request.cookies.get("access_token")
     if not token:
         return None
@@ -61,14 +69,7 @@ async def login(
     csrf_token: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Bug fix: this endpoint is now called via fetch()/AJAX from login.html
-    # instead of a normal HTML form POST. A failed attempt updates the page
-    # in place (no browser navigation at all), so no new history entry is
-    # created — Back always goes straight to whatever page preceded the
-    # single /auth/login page load, no matter how many attempts were made.
-    # (A normal form POST — even one that redirects afterwards — still
-    # creates one history entry per attempt, which is what caused Back to
-    # need pressing once per attempt before this fix.)
+
     if not csrf_token_valid(request, csrf_token):
         return JSONResponse({"error": "Your session expired. Please refresh and try again."}, status_code=403)
 
@@ -109,24 +110,18 @@ async def register(
     password: str = Form(...), db: Session = Depends(get_db)
 ):
     if db.query(User).filter(User.email == email).first():
-        resp = templates.TemplateResponse(
-            request=request, name="auth/register.html",
-            context={"error": "Email already registered"}
-        )
-        return set_no_cache_headers(resp)
+        return JSONResponse({"error": "Email already registered"}, status_code=200)
+
     pwd_error = validate_password(password)
     if pwd_error:
-        resp = templates.TemplateResponse(
-            request=request, name="auth/register.html",
-            context={"error": pwd_error}
-        )
-        return set_no_cache_headers(resp)
-    user = User(name=name, email=email, hashed_password=hash_password(password),avatar=name[0].upper() if name else "U")
+        return JSONResponse({"error": pwd_error}, status_code=200)
+
+    user = User(name=name, email=email, hashed_password=hash_password(password), avatar=name[0].upper() if name else "U")
     db.add(user)
     db.commit()
     db.refresh(user)
     token = create_access_token({"sub": str(user.id)})
-    resp = RedirectResponse(url="/dashboard", status_code=302)
+    resp = JSONResponse({"success": True, "redirect": "/dashboard"})
     resp.set_cookie("access_token", token, httponly=True, max_age=86400, samesite="lax")
     return resp
 
@@ -162,14 +157,8 @@ async def forgot_password(
     if user:
         token = create_reset_token(user.id)
         reset_link = str(request.url_for("reset_password_page", token=token))
-        # NOTE: No SMTP/email service is configured for this project.
-        # In production this link would be emailed to the user instead of
-        # being shown on screen. Logging it server-side simulates that.
         print(f"[Forgot Password] Reset link for {user.email}: {reset_link}")
-
-    # Same message regardless of whether the email exists, so the page
-    # never reveals which emails are registered.
-    resp = templates.TemplateResponse(
+        resp = templates.TemplateResponse(
         request=request, name="auth/forgot_password.html",
         context={
             "message": "If an account exists for that email, a password reset link has been generated.",
@@ -229,7 +218,6 @@ async def reset_password(
 
     user.hashed_password = hash_password(password)
     db.commit()
-
     new_token = generate_csrf_token()
     resp = templates.TemplateResponse(
         request=request, name="auth/login.html",

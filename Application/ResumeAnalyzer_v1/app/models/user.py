@@ -12,7 +12,9 @@ class User(Base):
     _avatar = Column("avatar", String(255), nullable=True)
     @property
     def avatar(self):
-        return self._avatar or self.name[0].upper() if self.name else "U"
+        if self._avatar:
+            return self._avatar
+        return self.name[0].upper() if self.name else "U"
 
     @avatar.setter  
     def avatar(self, value):
