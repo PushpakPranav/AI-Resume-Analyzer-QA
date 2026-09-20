@@ -11,8 +11,6 @@ _key_cycle = itertools.cycle(GROQ_API_KEYS)
 _key_lock = threading.Lock()
 
 def _next_key():
-    """Round-robin: har call pe agli key milegi, isse load sab keys me
-    baant jaata hai — ek hi key jaldi rate-limit nahi hoti."""
     with _key_lock:
         return next(_key_cycle)
 
@@ -27,7 +25,7 @@ class GroqTruncatedError(Exception):
 
 def _build_groq_request(prompt, max_tokens, temperature, seed, api_key):
     body = json.dumps({
-        "model": "llama-3.3-70b-versatile",
+        "model": "openai/gpt-oss-120b",
         "messages": [
             {"role": "system", "content": "You are an expert ATS resume analyzer. Always respond with valid JSON only. No explanation, no markdown, no code fences."},
             {"role": "user", "content": prompt}
@@ -73,11 +71,11 @@ def _call_groq(prompt, max_tokens=1500, temperature=0.1, seed=42):
                 max_tokens = int(max_tokens * 1.5)
                 time.sleep(1)
             except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    # Is key ka quota khatam — isi key pe retry mat karo,
-                    # bahar wale loop me agli key try hogi.
-                    last_err = RuntimeError(f"Groq 429 rate-limited on one key")
+                if e.code in (429, 401, 403):
+                    last_err = RuntimeError(f"Groq API error {e.code} on one key")
                     break
+                if e.code in (400, 404):
+                    raise RuntimeError(f"Groq API error {e.code}: {e.read().decode()}")
                 if attempt == 2:
                     last_err = RuntimeError(f"Groq API error {e.code}: {e.read().decode()}")
                     break

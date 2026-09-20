@@ -28,6 +28,10 @@ Application/ResumeAnalyzer_v1/uploads/*
 !Application/ResumeAnalyzer_v1/uploads/.gitkeep
 Application/ResumeAnalyzer_v1/reports/*
 !Application/ResumeAnalyzer_v1/reports/.gitkeep
+Automation/Downloads/*
+!Automation/Downloads/.gitkeep
+Application/ResumeAnalyzer_v1/app/static/avatars/*
+!Application/ResumeAnalyzer_v1/app/static/avatars/.gitkeep
 
 # ---- Java / Maven (Automation) ----
 Automation/target/
