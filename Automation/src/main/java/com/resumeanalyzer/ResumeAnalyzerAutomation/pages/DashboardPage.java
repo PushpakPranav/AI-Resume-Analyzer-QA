@@ -7,11 +7,14 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.JavascriptExecutor;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 
 public class DashboardPage extends BasePage{
+	
 	private final NavbarComponent navbar;
+	
 	public DashboardPage(WebDriver driver) {
 		super(driver);
 		PageFactory.initElements( driver, this);
@@ -53,11 +56,14 @@ public class DashboardPage extends BasePage{
 	@FindBy(xpath="//button[contains(@id,'resume-delete-btn-')]")
 	private WebElement deleteResumeBtn;
 	
-	@FindBy(xpath = "//div[contains(text(),'Resume deleted successfully.')]")
+	@FindBy(id = "delete-message-alert")
 	private WebElement deleteSuccessMessage;
 
 	@FindBy(id = "upload-first-resume-btn")
 	private WebElement uploadResumeBtn;
+	
+	@FindBy(xpath="//a[@id='upload-new-resume-btn']")
+	private WebElement uploadNewResumeBtn;
 
 	@FindBy(id = "stat-total-resumes-value")
 	private WebElement totalResumeCount;
@@ -114,6 +120,12 @@ public class DashboardPage extends BasePage{
 	    driver.switchTo().alert().dismiss();
 	}
 	
+	public void tamperFirstDeleteFormCsrfToken(String fakeToken) {
+	    WebElement form = deleteResumeBtn.findElement(By.xpath("./ancestor::form"));
+	    WebElement csrfInput = form.findElement(By.cssSelector("input[name='csrf_token']"));
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", csrfInput, fakeToken);
+	}
+	
 //	  =====================
 //	  Getters
 //	  =====================
@@ -123,7 +135,7 @@ public class DashboardPage extends BasePage{
 	}
 	
 	public String getResumeFileName() {
-	    return getText(resumeFileName);
+	    return getText(resumeFileName).trim();
 	}
 	
 	public int getResumeHistoryCount() {
@@ -149,12 +161,16 @@ public class DashboardPage extends BasePage{
 	    return getText(domainsTried);
 	}
 	
+	public String getDeletionSuccessMessage() {
+		return getText(deleteSuccessMessage);
+	}
+	
 //	  =====================
 //	  Validations
 //	  =====================
 	
 	public boolean isUploadBtnDisplayed() {
-		return isDisplayed(uploadResumeBtn);
+		return isDisplayed(uploadNewResumeBtn);
 	}
 	
 	public boolean isScoreHistoryDisplayed() {
@@ -178,6 +194,7 @@ public class DashboardPage extends BasePage{
 	}
 
 	public boolean isUsernameDisplayed() {
+		waitForURLContains("/dashboard",10);
 		return isDisplayed(welcomeMessage);	
 	}
 
@@ -186,7 +203,21 @@ public class DashboardPage extends BasePage{
 	}
 	 
 	public boolean hasResumeHistory() {
+		waitForVisibility(resumeRows.get(0));
 	    return !resumeRows.isEmpty();
+	}
+	
+	public void deleteAllExistingResume() {
+		while (getResumeHistoryCount() > 0){
+			clickDeleteResume();
+			confirmDelete();
+			waitForDashboardWithDeletedParam();
+		}
+		}
+	
+	public boolean isResumeDeletionMessageDisplayed() {
+		waitForVisibility(deleteSuccessMessage);
+		return isDisplayed(deleteSuccessMessage);
 	}
 	
 	public boolean isUploadDateDisplayed() {
@@ -200,7 +231,7 @@ public class DashboardPage extends BasePage{
 	}
 	
 	public boolean isDeleteSuccessMessageDisplayed() {
-	    return isDisplayed(deleteSuccessMessage);
+	    return deleteSuccessMessage.isDisplayed();
 	}
 	
 	public boolean isDomainsDetectedCardDisplayed() {
@@ -213,6 +244,10 @@ public class DashboardPage extends BasePage{
 	
 	public boolean isHistoryButtonDisplayed() {
 	    return !historyBtn.isEmpty() && historyBtn.get(0).isDisplayed();
+	}
+
+	public void waitForDashboardWithDeletedParam() {
+		waitForURLContains("/dashboard?deleted=1",10);
 	}
 	
 }

@@ -1,6 +1,6 @@
 package base;
 import java.io.IOException;
-import java.time.Duration;
+import org.testng.annotations.Listeners;
 
 import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterMethod;
@@ -10,12 +10,14 @@ import com.resumeanalyzer.ResumeAnalyzerAutomation.utils.ConfigReader;
 
 import factory.DriverFactory;
 
+
+@Listeners(listeners.ScreenshotListener.class)
 public class BaseTest {
 	protected WebDriver driver;
 	protected ConfigReader config;
 	
 	
-	@BeforeMethod
+	@BeforeMethod(alwaysRun = true)
     public void setup() throws IOException {
 		
 		config = new ConfigReader();
@@ -26,7 +28,7 @@ public class BaseTest {
 		
 		driver.get(config.getProperty("url"));
     }
-    @AfterMethod
+    @AfterMethod(alwaysRun = true)
     public void tearDown() {
         DriverFactory.quitBrowser();
     }

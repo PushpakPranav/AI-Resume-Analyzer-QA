@@ -17,25 +17,25 @@ public class RegisterPage extends BasePage {
 //	  Elements
 //	  =====================
     
-    @FindBy(xpath = "//form[@action='/auth/register']")
+    @FindBy(id = "register-form")
     private WebElement registerForm;
 
-    @FindBy(xpath = "//form[@action='/auth/register']//input[@name='name']")
+    @FindBy(id = "name")
     private WebElement nameField;
 
-    @FindBy(xpath = "//form[@action='/auth/register']//input[@name='email']")
+    @FindBy(id = "email")
     private WebElement emailField;
 
     @FindBy(id = "password")
     private WebElement passwordField;
 
-    @FindBy(xpath = "//form[@action='/auth/register']//button[@type='submit']")
+    @FindBy(id = "register-submit-btn")
     private WebElement btnCreateAccount;
 
-    @FindBy(xpath = "//a[@href='/auth/login']")
+    @FindBy(id = "loginLink")
     private WebElement lnkLogin;
 
-    @FindBy(xpath = "//div[contains(@class,'alert-danger')]")
+    @FindBy(id = "register-error-box")
     private WebElement lblError;
 
 //	  =====================
@@ -78,6 +78,7 @@ public class RegisterPage extends BasePage {
         enterEmail(email);
         enterPassword(password);
     }
+    
     private void submitRegistration() {
         clickCreateAccount();
     }
@@ -120,21 +121,16 @@ public class RegisterPage extends BasePage {
         return waitForAlert();
     }
     
-    private String getFieldValidationMessage(WebElement field) {
-        return (String) ((JavascriptExecutor) driver)
-                .executeScript("return arguments[0].validationMessage;", field);
-    }
-    
     public String getNameValidationMessage() {
-        return getFieldValidationMessage(nameField);
+        return getAttribute(nameField, "validationMessage");
     }
 
     public String getEmailValidationMessage() {
-        return getFieldValidationMessage(emailField);
+        return getAttribute(emailField, "validationMessage");
     }
 
     public String getPasswordValidationMessage() {
-        return getFieldValidationMessage(passwordField);
+        return getAttribute(passwordField, "validationMessage");
     }
     
     public String getName() {
@@ -196,5 +192,9 @@ public class RegisterPage extends BasePage {
 
     public boolean isPasswordFieldDisplayed() {
         return isDisplayed(passwordField);
+    }
+
+    public void waitForRegisterForm() {
+        waitForVisibility(registerForm);
     }
 }

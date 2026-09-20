@@ -82,7 +82,7 @@ public class HistoryPage extends BasePage{
 	}
 	
 	public String getResumeFileName() {
-		return getText(resumeFileName);
+		return getText(resumeFileName).trim();
 	}
 	
 	private WebElement getFirstElement(List<WebElement> elements) {
@@ -129,6 +129,10 @@ public class HistoryPage extends BasePage{
 	    }
 
 	    return matchedSkills;
+	}
+	
+	public String getFirstDownloadReportUrl() {
+	    return getAttribute(getFirstElement(downloadReportBtn), "href");
 	}
 	
 //	  =====================
@@ -180,6 +184,11 @@ public class HistoryPage extends BasePage{
 	
 	public boolean hasDownloadReport() {
 	    return getDownloadReportButtonCount() > 0;
+	}
+
+	public void waitForHistoryPage() {
+		waitForVisibility(historyPageHeader);
+		
 	}
 	
 }

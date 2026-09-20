@@ -9,88 +9,103 @@ import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LoginPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LogoutPage;
 
 import base.BaseTest;
+import constants.TestData;
 
 public class LogoutTest extends BaseTest {
 
-    HomePage homepage;
-    LoginPage loginpage;
-    LogoutPage logoutpage;
+	HomePage homePage;
+	LoginPage loginPage;
+	LogoutPage logoutPage;
 
-    String email = "testname100@gmail.com";
-    String password = "Test@123";
+	@BeforeMethod(alwaysRun = true)
+	public void init() {
+		homePage = new HomePage(driver);
+		loginPage = new LoginPage(driver);
+		logoutPage = new LogoutPage(driver);
 
-    @BeforeMethod
-    public void init() {
+		homePage.clickLogin();
+		loginPage.loginAsValidUser(TestData.VALID_EMAIL, TestData.VALID_PASSWORD);
+		loginPage.waitForDashboard();
+	}
 
-        homepage = new HomePage(driver);
-        loginpage = new LoginPage(driver);
-        logoutpage = new LogoutPage(driver);
 
-        homepage.clickLogin();
-        loginpage.loginWithCredentials(email, password);
-    }
+	// ---------------------------------------------------------
+	// Logout behavior
+	// ---------------------------------------------------------
 
-    @Test
-    public void verifyUserCanLogout() {
+	@Test
+	public void verifyUserCanLogout() {
+		logoutPage.logout();
 
-        logoutpage.logout();
+		Assert.assertTrue(
+				logoutPage.isLoginDisplayed(),
+				"Login button should be visible after logout."
+				);
 
-        Assert.assertTrue(
-                logoutpage.isLoginDisplayed(),
-                "Login button should be visible after logout."
-        );
+		Assert.assertTrue(
+				logoutPage.isSignUpDisplayed(),
+				"Sign Up button should be visible after logout."
+				);
+	}
 
-        Assert.assertTrue(
-                logoutpage.isSignUpDisplayed(),
-                "Sign Up button should be visible after logout."
-        );
-    }
+	@Test
+	public void verifyIsLoggedOutHelperReturnsTrueAfterLogout() {
+		logoutPage.logout();
 
-    @Test
-    public void verifyLogoutRedirectsToHomePage() {
+		Assert.assertTrue(
+				logoutPage.isLoggedOut(),
+				"User should be reported as logged out after clicking Logout."
+				);
+	}
 
-        logoutpage.logout();
+	@Test
+	public void verifyLogoutRedirectsToHomePage() {
+		logoutPage.logout();
 
-        Assert.assertTrue(
-                driver.getCurrentUrl().endsWith("/"),
-                "User is not redirected to Home page after logout."
-        );
-    }
+		Assert.assertTrue(
+				driver.getCurrentUrl().endsWith("/"),
+				"User is not redirected to Home page after logout."
+				);
+	}
 
-    @Test
-    public void verifyDashboardNotAccessibleAfterLogout() {
 
-        logoutpage.logout();
+	// ---------------------------------------------------------
+	// Session invalidation after logout
+	// ---------------------------------------------------------
 
-        driver.get("http://127.0.0.1:8000/dashboard");
+	@Test
+	public void verifyDashboardNotAccessibleAfterLogout() {
+		logoutPage.logout();
 
-        Assert.assertTrue(
-                driver.getCurrentUrl().contains("/auth/login"),
-                "Unauthenticated user should be redirected to Login."
-        );
-    }
-    @Test
-    public void verifyDashboardNotAccessibleUsingBrowserBack() {
+		driver.get(config.getProperty("url") + "/dashboard");
 
-        logoutpage.logout();
+		Assert.assertTrue(
+				driver.getCurrentUrl().contains("/auth/login"),
+				"Unauthenticated user should be redirected to Login."
+				);
+	}
 
-        driver.navigate().back();
+	@Test
+	public void verifyDashboardNotAccessibleUsingBrowserBack() {
+		logoutPage.logout();
 
-        Assert.assertTrue(
-                driver.getCurrentUrl().contains("/auth/login"),
-                "User should be redirected to Login page after pressing browser back."
-        );
-    }
-    @Test
-    public void verifyRefreshAfterLogout() {
+		driver.navigate().back();
 
-        logoutpage.logout();
+		Assert.assertTrue(
+				driver.getCurrentUrl().contains("/auth/login"),
+				"User should be redirected to Login page after pressing browser back."
+				);
+	}
 
-        driver.navigate().refresh();
+	@Test
+	public void verifyRefreshAfterLogout() {
+		logoutPage.logout();
 
-        Assert.assertTrue(
-                driver.getCurrentUrl().contains("/"),
-                "User should remain logged out after refresh."
-        );
-    }
+		driver.navigate().refresh();
+
+		Assert.assertTrue(
+				driver.getCurrentUrl().contains("/"),
+				"User should remain logged out after refresh."
+				);
+	}
 }

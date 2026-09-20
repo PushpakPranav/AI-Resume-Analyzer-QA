@@ -1,84 +1,100 @@
 package tests;
-
-import java.time.Duration;
-
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.DashboardPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HistoryPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LoginPage;
 
 import base.BaseTest;
-import components.NavbarComponent;
+import constants.TestData;
 
 public class DashboardNavigationTest extends BaseTest {
 
-	LoginPage loginpage;
-	HomePage homepage;
-	DashboardPage dashboardpage;
+	LoginPage loginPage;
+	HomePage homePage;
+	DashboardPage dashboardPage;
 	NavbarComponent navbar;
+	
+	private void ensureResumeHistory() {
 
-	String email = "test11@gmail.com";
-	String password = "MyStr0ng@Pass!";
-	String resumePath;
+	    if (dashboardPage.hasResumeHistory()) {
+	        return;
+	    }
 
-	@BeforeMethod
+	    navbar.clickHome();
+	    homePage.clickUploadForm();
+	    homePage.selectFile(TestData.DASHBOARD_RESUME_PATH);
+	    homePage.clickAnalyzeBtn();
+	    homePage.waitForAtsResultPage();
+	    navbar.clickDashboard();
+	}
+	
+	@BeforeMethod(alwaysRun = true)
 	public void init() {
-		homepage = new HomePage(driver);
-		loginpage = new LoginPage(driver);
-		dashboardpage = new DashboardPage(driver);
-		navbar = new NavbarComponent(driver);
 
-		resumePath = System.getProperty("user.dir")
-				+ "/src/test/resources/TestData/Pushpak_Pranav_QA_Resume.docx";
+	    homePage = new HomePage(driver);
+	    loginPage = new LoginPage(driver);
+	    dashboardPage = new DashboardPage(driver);
+	    navbar = new NavbarComponent(driver);
 
-		homepage.clickLogin();
-		loginpage.loginWithCredentials(email, password);
-		if (!dashboardpage.isResumePresent()) {
+	    homePage.clickLogin();
 
-	        navbar.clickHome();
+	    loginPage.loginAsValidUser(
+	            TestData.DASHBOARD_USER_EMAIL,
+	            TestData.DASHBOARD_USER_PASSWORD
+	    );
 
-	        homepage.clickUploadForm();
-	        homepage.selectFile(resumePath);
-	        homepage.clickAnalyzeBtn();
+	    loginPage.waitForDashboard();
 
-	        navbar.clickDashboard();
-		}
+	    ensureResumeHistory();
 	}
 
-	
 
-	
+	// ---------------------------------------------------------
+	// Dashboard -> Home
+	// ---------------------------------------------------------
 
 	@Test
 	public void verifyClickHomeNavigatesToHomePage() {
-		dashboardpage.clickHome();
+		dashboardPage.clickHome();
+
 		Assert.assertTrue(
-				homepage.isUploadFormDisplayed(),
-				"Upload form is not displayed after navigating Home from the dashboard.");
+				homePage.isUploadFormDisplayed(),
+				"Upload form is not displayed after navigating Home from the dashboard."
+				);
 	}
+
+
+	// ---------------------------------------------------------
+	// Dashboard -> History
+	// ---------------------------------------------------------
+
+	@Test
+	public void verifyHistoryButtonDisplayed() {
+		Assert.assertTrue(
+				dashboardPage.isHistoryButtonDisplayed(),
+				"History button is not displayed for a resume with history."
+				);
+	}
+
 	@Test
 	public void verifyClickHistoryBtnNavigatesToHistoryPage() {
+		HistoryPage historyPage = dashboardPage.clickFirstHistoryButton();
 
-	    HistoryPage historyPage = dashboardpage.clickFirstHistoryButton();
-	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+		historyPage.waitForHistoryPage();
 
-	    wait.until(ExpectedConditions.urlContains("/analysis/history/"));
-	    Assert.assertTrue(
-	            driver.getCurrentUrl().contains("/analysis/history"),
-	            "Navigation to History page failed."
-	    );
+		Assert.assertTrue(
+		        driver.getCurrentUrl().contains("/analysis/history"),
+		        "Navigation to History page failed."
+		);
 
-	    Assert.assertTrue(
-	            historyPage.isHistoryHeadingDisplayed(),
-	            "History page is not loaded properly."
-	    );
+		Assert.assertTrue(
+		        historyPage.isHistoryHeadingDisplayed(),
+		        "History page is not loaded properly."
+		);
 	}
-	
-
 }

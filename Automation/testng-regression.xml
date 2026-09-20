@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="AI Resume Analyzer - QA Automation Suite" verbose="1">
+
+    <!-- Sequential execution only — parallel intentionally disabled
+         due to third-party AI (Groq) API rate limits. -->
+
+    <test name="Smoke and Authentication">
+        <classes>
+            <class name="tests.HomeTest"/>
+            <class name="tests.RegisterTest"/>
+            <class name="tests.LoginTest"/>
+            <class name="tests.LoginLockoutTest"/>
+            <class name="tests.LogoutTest"/>
+            <class name="tests.ForgotPasswordTest"/>
+            <class name="tests.ResetPasswordTest"/>
+        </classes>
+    </test>
+
+    <test name="Dashboard and Resume Management">
+        <classes>
+            <class name="tests.DashboardTest"/>
+            <class name="tests.DashboardNavigationTest"/>
+            <class name="tests.DashboardResumeHistoryTest"/>
+            <class name="tests.DashboardDeleteResumeTest"/>
+            <class name="tests.HistoryTest"/>
+            <class name="tests.AvatarUploadTest"/>
+        </classes>
+    </test>
+
+    <test name="Resume Analysis">
+        <classes>
+            <class name="tests.AtsResultTest"/>
+            <class name="tests.JdMatchResultTest"/>
+            <class name="tests.FileUploadValidationTest"/>
+        </classes>
+    </test>
+
+    <test name="Security">
+        <classes>
+            <class name="tests.UnauthorizedAccessTest"/>
+            <class name="tests.IDORAccessTest"/>
+            <class name="tests.CSRFProtectionTest"/>
+            <class name="tests.SecurityRegressionTest"/>
+        </classes>
+    </test>
+
+</suite>

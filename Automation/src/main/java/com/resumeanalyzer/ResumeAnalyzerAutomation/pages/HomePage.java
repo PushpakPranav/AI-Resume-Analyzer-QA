@@ -1,19 +1,18 @@
 package com.resumeanalyzer.ResumeAnalyzerAutomation.pages;
 import java.util.List;
-
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
-import com.resumeanalyzer.ResumeAnalyzerAutomation.utils.WaitUtils;
 
 
 public class HomePage extends BasePage{
 		private final NavbarComponent navbar;
 		private final LoginPage loginPage;
-		private final WaitUtils waitUtil;
 		private static final List<String> EXPECTED_STEPS = List.of(
                 "Upload Resume",
                 "Auto Domain Detection",
@@ -25,7 +24,6 @@ public class HomePage extends BasePage{
 			PageFactory.initElements(driver, this);
 			navbar = new NavbarComponent(driver);
 			loginPage = new LoginPage(driver);
-			waitUtil = new WaitUtils(driver);
 			
 		}
 		
@@ -33,16 +31,32 @@ public class HomePage extends BasePage{
 //		  Elements
 //		  =====================
 		
-	    @FindBy(id="submit-btn")private WebElement analyzeBtn;
-	    @FindBy(id="upload-form")private WebElement uploadForm;
-	    @FindBy(id="file-input")private WebElement fileInput;
-	    @FindBy(css=".mb-1.fw-semibold")private WebElement uploadInstructionText;
-	    @FindBy(id="file-name")private WebElement selectedFileName;
-	    @FindBy(xpath="//p[@class='text-muted small mb-0']")private WebElement supportedFileTypeText;
-	    @FindBy(xpath="//i[@class='bi bi-info-circle me-2 text-teal']")private WebElement howItWorksSection;
+	    @FindBy(id="submit-btn")
+	    private WebElement analyzeBtn;
+	    
+	    @FindBy(id="upload-form")
+	    private WebElement uploadForm;
+	    
+	    @FindBy(id="file-input")
+	    private WebElement fileInput;
+	    
+	    @FindBy(css=".mb-1.fw-semibold")
+	    private WebElement uploadInstructionText;
+	    
+	    @FindBy(id="file-name")
+	    private WebElement selectedFileName;
+	    
+	    @FindBy(xpath="//p[@class='text-muted small mb-0']")
+	    private WebElement supportedFileTypeText;
+	    
+	    @FindBy(xpath="//i[@class='bi bi-info-circle me-2 text-teal']")
+	    private WebElement howItWorksSection;
 	    
 	    @FindBy(css = ".card .d-flex.gap-3 strong")
 	    private List<WebElement> stepTitles;
+	    
+	    @FindBy(id="upload-error") 
+	    private WebElement uploadError;
 	    
 //	  =====================
 //	  Methods
@@ -64,7 +78,7 @@ public class HomePage extends BasePage{
 	    public void loginAndGoHome(String email, String password){
 	    	clickLogin();
 			loginPage.loginAsValidUser(email, password);
-			waitUtil.waitForURLContains("dashboard");
+			loginPage.waitForDashboard();
 			navbar.clickHome();
 		}
 	    
@@ -83,8 +97,22 @@ public class HomePage extends BasePage{
 	    
 	    public void selectFile(String filepath) {
 	    	fileInput.sendKeys(filepath);
+	    }	
+	    
+	    public void forceSubmitUploadForm() {
+	        ((JavascriptExecutor) driver).executeScript(
+	                "document.getElementById('upload-form').submit();"
+	        );
 	    }
 	    
+	    public void selectFileBypassingClientValidation(String filepath) {
+	        ((JavascriptExecutor) driver).executeScript(
+	                "var oldInput = document.getElementById('file-input');" +
+	                "var newInput = oldInput.cloneNode(true);" +
+	                "oldInput.parentNode.replaceChild(newInput, oldInput);"
+	        );
+	        fileInput.sendKeys(filepath);
+	    }
 	    
 	 // =====================
 	 // Getters
@@ -102,9 +130,17 @@ public class HomePage extends BasePage{
 	    	return getText(supportedFileTypeText);
 	    }
 	    
+	    public String getUploadError() {
+	        return getText(uploadError);
+	    }
+	    
 	 // =====================
 	 // Validations
 	 // =====================
+	    
+	    public boolean waitForAtsResultPage() {
+	    	return waitForURLContains("resume/upload", 30);
+		}
 	    
 	    public boolean isUploadFormDisplayed() {
 	        return isDisplayed(uploadForm);
@@ -147,6 +183,10 @@ public class HomePage extends BasePage{
 	    }
 	   
 	    public boolean isDashboardDisplayed() {
-		   return navbar.isDashboardDisplayed();
+	    	return waitForURLContains("/dashboard",10);
+	   }
+	    
+	   public boolean isUploadErrorDisplayed() {
+	       return isDisplayedSafely(By.id("upload-error"), 10);
 	   }
 }

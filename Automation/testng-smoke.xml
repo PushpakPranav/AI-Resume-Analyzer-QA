@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="AI Resume Analyzer - Smoke Suite" verbose="1">
+
+    <test name="Smoke - Critical Path">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.HomeTest"/>
+            <class name="tests.RegisterTest"/>
+            <class name="tests.LoginTest"/>
+            <class name="tests.DashboardTest"/>
+            <class name="tests.AtsResultTest"/>
+            <class name="tests.JdMatchResultTest"/>
+        </classes>
+    </test>
+
+</suite>

@@ -3,85 +3,192 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+ <!-- ==================== PROJECT INFO ==================== -->
+
   <groupId>com.resumeanalyzer</groupId>
   <artifactId>ResumeAnalyzerAutomation</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-
+  
   <name>ResumeAnalyzerAutomation</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <description>
+        UI and API automation framework for Resume Analyzer application
+   </description>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>17</maven.compiler.release>
-  </properties>
+<!-- ==================== PROPERTIES ==================== -->
 
-  <dependencies>
+    <properties>
 
-    <dependency>
-        <groupId>org.seleniumhq.selenium</groupId>
-        <artifactId>selenium-java</artifactId>
-        <version>4.33.0</version>
-    </dependency>
+        <!-- Java -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <dependency>
-        <groupId>org.testng</groupId>
-        <artifactId>testng</artifactId>
-        <version>7.11.0</version>
-        <scope>test</scope>
-    </dependency>
+        <!-- Dependency Versions -->
+        <selenium.version>4.33.0</selenium.version>
+        <testng.version>7.11.0</testng.version>
+        <webdrivermanager.version>6.1.0</webdrivermanager.version>
+        <restassured.version>6.0.1</restassured.version>
 
-    <dependency>
-        <groupId>io.github.bonigarcia</groupId>
-        <artifactId>webdrivermanager</artifactId>
-        <version>6.1.0</version>
-    </dependency>
+        <!-- Maven Plugin Versions -->
+        <surefire.version>3.5.3</surefire.version>
+        <compiler.version>3.14.0</compiler.version>
 
-</dependencies>
+    </properties>
 
-  <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
-      <plugins>
-        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
-        <plugin>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>3.4.0</version>
-        </plugin>
-        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>3.3.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.13.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.3.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.4.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>3.1.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.1.2</version>
-        </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
-        <plugin>
-          <artifactId>maven-site-plugin</artifactId>
-          <version>3.12.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.6.1</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
+    <!-- ==================== DEPENDENCIES ==================== -->
+
+    <dependencies>
+
+        <!-- Selenium -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+
+        <!-- TestNG -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WebDriverManager -->
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>${webdrivermanager.version}</version>
+        </dependency>
+
+        <!-- REST Assured -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${restassured.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ==================== BUILD ==================== -->
+
+    <build>
+
+        <plugins>
+
+            <!-- Maven Compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.version}</version>
+
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Surefire + TestNG -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+
+                <configuration>
+
+                    <!-- Default TestNG suite -->
+                    <suiteXmlFiles>
+                        <suiteXmlFile>testng-regression.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+
+                    <!-- Don't append random surefire suffixes -->
+                    <useSystemClassLoader>true</useSystemClassLoader>
+
+                    <!-- Test output -->
+                    <printSummary>true</printSummary>
+
+                    <!-- Preserve test reports -->
+                    <reportsDirectory>
+                        ${project.build.directory}/surefire-reports
+                    </reportsDirectory>
+
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+    <!-- ==================== MAVEN PROFILES ==================== -->
+
+    <profiles>
+
+        <!-- ==================== SMOKE ==================== -->
+
+        <profile>
+
+            <id>smoke</id>
+
+            <build>
+
+                <plugins>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+
+                        <configuration>
+
+                            <suiteXmlFiles>
+                                <suiteXmlFile>
+                                    testng-smoke.xml
+                                </suiteXmlFile>
+                            </suiteXmlFiles>
+
+                        </configuration>
+
+                    </plugin>
+
+                </plugins>
+
+            </build>
+
+        </profile>
+
+
+        <!-- ==================== REGRESSION ==================== -->
+
+        <profile>
+
+            <id>regression</id>
+
+            <build>
+
+                <plugins>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire.version}</version>
+
+                        <configuration>
+
+                            <suiteXmlFiles>
+                                <suiteXmlFile>
+                                    testng-regression.xml
+                                </suiteXmlFile>
+                            </suiteXmlFiles>
+
+                        </configuration>
+
+                    </plugin>
+
+                </plugins>
+
+            </build>
+
+        </profile>
+
+    </profiles>
+
 </project>

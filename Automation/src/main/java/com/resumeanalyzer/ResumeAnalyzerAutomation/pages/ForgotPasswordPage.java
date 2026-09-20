@@ -3,11 +3,13 @@ package com.resumeanalyzer.ResumeAnalyzerAutomation.pages;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
 
 public class ForgotPasswordPage extends BasePage{
 
 	public ForgotPasswordPage(WebDriver driver) {
 		super(driver);
+		PageFactory.initElements(driver, this);
 	}
 	
 	// =====================
@@ -38,6 +40,9 @@ public class ForgotPasswordPage extends BasePage{
 	@FindBy(id="forgot-password-email-error")
 	private WebElement emailError;
 	
+	@FindBy(id="forgot-password-reset-link")
+	private WebElement devModeResetLink;
+	
 	// =====================
 	// Navigation
 	// =====================
@@ -47,6 +52,10 @@ public class ForgotPasswordPage extends BasePage{
 	    return new LoginPage(driver);
 	}
 	
+	public ResetPasswordPage clickDevModeResetLink() {
+	    click(devModeResetLink);
+	    return new ResetPasswordPage(driver);
+	}
 	// =====================
 	// Actions
 	// =====================
@@ -132,10 +141,16 @@ public class ForgotPasswordPage extends BasePage{
 	}
 	
 	public boolean isSuccessMessageDisplayed() {
+		waitForVisibility(successMessage);
 	    return isDisplayed(successMessage);
 	}
 	
 	public boolean isEmailErrorDisplayed() {
 	    return isDisplayed(emailError);
+	}
+
+	public void waitForForgotPasswordPage() {
+		waitForVisibility(forgotPasswordTitle);
+		
 	}
 }

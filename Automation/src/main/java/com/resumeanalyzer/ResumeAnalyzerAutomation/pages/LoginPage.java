@@ -4,6 +4,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.JavascriptExecutor;
 
 import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 
@@ -22,17 +23,20 @@ public class LoginPage extends BasePage{
 //	  Elements
 //	  =====================
 	
-	@FindBy(xpath="//input[@name='email']")
+	@FindBy(id="email")
 	private WebElement emailInput;
 	
-	@FindBy(xpath="//input[@name='password']")
+	@FindBy(id="password")
 	private WebElement passwordInput;
 	
-	@FindBy(xpath="//button[@type='submit']")
+	@FindBy(id="login-submit-btn")
 	private WebElement loginBtn;
 	
-	@FindBy(xpath="//a[@class='text-primary fw-semibold']")
+	@FindBy(id="login-signup-link")
 	private WebElement signUpLink;
+	
+	@FindBy(id="login-error-box")
+	private WebElement loginErrorBox;
 	
 	@FindBy(className="fw-bold")
 	private WebElement welcomeText;
@@ -43,8 +47,11 @@ public class LoginPage extends BasePage{
 	@FindBy(xpath="//h4[@class='welcome-text']")
 	private WebElement welcomeMessage;
 	
-	@FindBy(xpath = "//a[normalize-space()='Forgot password?']")
+	@FindBy(id="login-forgot-password-link")
 	private WebElement forgotPasswordLink;
+	
+	@FindBy(css = "#login-form input[name='csrf_token']")
+	private WebElement csrfTokenInput;
 	
 //	  =====================
 //	  Navigation
@@ -82,6 +89,25 @@ public class LoginPage extends BasePage{
 	    return this;
 	}
 	
+	public DashboardPage loginWithTrailingSpaceInEmail(String email,String password) {
+		performLogin(email,password);
+		return new DashboardPage(driver);
+	}
+	
+	public DashboardPage loginWithLeadingSpaceInEmail(String email,String password) {
+		performLogin(email,password);
+		return new DashboardPage(driver);
+	}
+	
+	public void waitForDashboard() {
+		waitForVisibility(welcomeMessage);
+		
+	}
+	
+	public void tamperCsrfToken(String fakeToken) {
+	    ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", csrfTokenInput, fakeToken);
+	}
+	
 //	  =====================
 //	  Getters
 //	  =====================
@@ -96,6 +122,18 @@ public class LoginPage extends BasePage{
 
 	public String getWelcomeMessage() {
 		return getText(welcomeMessage);
+	}
+	
+	public String getErrorMessage() {
+	    return getText(loginErrorBox);
+	}
+	
+	public String getCsrfTokenValue() {
+	    return getAttribute(csrfTokenInput, "value");
+	}
+	
+	public WebElement getEmailInput() {
+		return emailInput;
 	}
 	
 //	  =====================
@@ -123,6 +161,11 @@ public class LoginPage extends BasePage{
 	public boolean isSignUpLinkDisplayed() {
 	    return isDisplayed(signUpLink);
 	}
+	
+	public boolean isErrorMessageDisplayed() {
+	    return isDisplayed(loginErrorBox);
+	}
+	
 
 	
 }

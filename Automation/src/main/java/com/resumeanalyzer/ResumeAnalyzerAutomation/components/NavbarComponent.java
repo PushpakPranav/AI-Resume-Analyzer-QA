@@ -34,6 +34,7 @@ public class NavbarComponent extends BasePage{
     @FindBy(id="dropdown-logout-link") WebElement logoutLink;
     @FindBy(id="dark-mode-toggle-btn") WebElement darkModeToggleBtn;
     @FindBy(id="nav-brand-logo") WebElement brandLogo;
+    @FindBy(id="avatarInput") private WebElement avatarFileInput;
     
 //	  =====================
 //	  Navigations
@@ -84,6 +85,15 @@ public class NavbarComponent extends BasePage{
     	click(brandLogo);
     }
     
+    public void uploadAvatar(String filepath) {
+        avatarFileInput.sendKeys(filepath);
+    }
+
+    public String acceptAvatarUploadAlert() {
+        String alert = waitForAlert();
+        return alert;
+    }
+    
 //	  =====================
 //	  Getters
 //	  =====================
@@ -105,13 +115,14 @@ public class NavbarComponent extends BasePage{
         List<WebElement> elements = driver.findElements(signUpBtnLocator);
         return !elements.isEmpty() && elements.get(0).isDisplayed();
     }
-    public boolean isDashboardDisplayed() {
+    public boolean isDashboardBtnDisplayed() {
     	return isDisplayed(dashboardBtn);
     }
     public boolean isHomeDisplayed() {
     	return isDisplayed(homeBtn);
     }
     public boolean isUserAvatarDisplayed() {
+    	waitForURLContains("/dashboard");
     	return isDisplayed(userAvatarDropdown);
     }
     public boolean isMyResumesDisplayed() {
@@ -125,6 +136,10 @@ public class NavbarComponent extends BasePage{
     }
     public boolean isBrandLogoDisplayed() {
     	return isDisplayed(brandLogo);
+    }
+    
+    public boolean isNavAvatarImageDisplayed() {
+        return isDisplayedSafely(By.id("nav-avatar-img"), 10);
     }
 }
 

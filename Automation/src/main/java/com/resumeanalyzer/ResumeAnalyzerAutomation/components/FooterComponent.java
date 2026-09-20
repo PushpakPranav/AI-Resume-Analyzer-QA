@@ -31,7 +31,7 @@ public class FooterComponent extends BasePage{
 //	  Validations
 //	  =====================
 	
-	public boolean footerMessageDisplayed() {
+	public boolean isFooterMessageDisplayed() {
 		return isDisplayed(footerMessage);
 	}
 	

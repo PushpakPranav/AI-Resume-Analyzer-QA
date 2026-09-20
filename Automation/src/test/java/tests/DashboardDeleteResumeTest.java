@@ -4,132 +4,177 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.DashboardPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LoginPage;
 
 import base.BaseTest;
-import components.NavbarComponent;
+import constants.TestData;
 
 public class DashboardDeleteResumeTest extends BaseTest {
 
-	LoginPage loginpage;
-	HomePage homepage;
-	DashboardPage dashboardpage;
+	LoginPage loginPage;
+	HomePage homePage;
+	DashboardPage dashboardPage;
 	NavbarComponent navbar;
 
-	String email = "test11@gmail.com";
-	String password = "MyStr0ng@Pass!";
-	String resumePath;
+	private void createFreshResume() {
 
-	@BeforeMethod
+        navbar.clickHome();
+
+        homePage.clickUploadForm();
+        homePage.selectFile(TestData.DASHBOARD_RESUME_PATH);
+        homePage.clickAnalyzeBtn();
+        homePage.waitForAtsResultPage();
+
+        navbar.clickDashboard();
+        loginPage.waitForDashboard();
+    }
+	
+	
+	@BeforeMethod(alwaysRun = true)
 	public void init() {
-		homepage = new HomePage(driver);
-		loginpage = new LoginPage(driver);
-		dashboardpage = new DashboardPage(driver);
-		navbar = new NavbarComponent(driver);
 
-		resumePath = System.getProperty("user.dir")
-				+ "/src/test/resources/TestData/Pushpak_Pranav_QA_Resume.docx";
+	    homePage = new HomePage(driver);
+	    loginPage = new LoginPage(driver);
+	    dashboardPage = new DashboardPage(driver);
+	    navbar = new NavbarComponent(driver);
 
-		homepage.clickLogin();
-		loginpage.loginWithCredentials(email, password);
-		if (!dashboardpage.isResumePresent()) {
+	    homePage.clickLogin();
 
-	        navbar.clickHome();
+	    loginPage.loginAsValidUser(
+	            TestData.DASHBOARD_DELETE_USER_EMAIL,
+	            TestData.DASHBOARD_DELETE_USER_PASSWORD
+	    );
 
-	        homepage.clickUploadForm();
-	        homepage.selectFile(resumePath);
-	        homepage.clickAnalyzeBtn();
-
-	        navbar.clickDashboard();
-		}
+	    loginPage.waitForDashboard();
+	    
 	}
+
+
+	// ---------------------------------------------------------
+	// Delete button
+	// ---------------------------------------------------------
+
+	@Test
+	public void verifyDeleteResumeButtonDisplayed() {
+		createFreshResume();
+		Assert.assertTrue(
+				dashboardPage.isDeleteResumeButtonDisplayed(),
+				"Delete resume button is not displayed."
+				);
+	}
+
+
+	// ---------------------------------------------------------
+	// Delete confirmation
+	// ---------------------------------------------------------
+
 	@Test
 	public void verifyDeleteResume() {
+		createFreshResume();
+		Assert.assertTrue(
+				dashboardPage.hasResumeHistory(),
+				"Resume history should contain a resume before deleting."
+				);
 
-	    Assert.assertTrue(dashboardpage.isResumePresent());
+		dashboardPage.clickDeleteResume();
+		dashboardPage.confirmDelete();
+		dashboardPage.waitForDashboardWithDeletedParam();
 
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.confirmDelete();
-
-	    driver.navigate().refresh();
-
-	    Assert.assertFalse(
-	            dashboardpage.isResumePresent(),
-	            "Resume was not deleted successfully."
-	    );
+		Assert.assertTrue(
+				dashboardPage.isResumeDeletionMessageDisplayed(),
+				"Resume was not deleted successfully."
+				);
 	}
-	@Test
-	public void verifyCancelDeleteResume() {
 
-	    int before = dashboardpage.getResumeHistoryCount();
-
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.cancelDelete();
-
-	    Assert.assertEquals(
-	            dashboardpage.getResumeHistoryCount(),
-	            before,
-	            "Resume should not be deleted after cancelling."
-	    );
-	}
 	@Test
 	public void verifyDeleteSuccessMessageDisplayed() {
+		createFreshResume();
+	dashboardPage.clickDeleteResume();
+	dashboardPage.confirmDelete();
 
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.confirmDelete();
+	dashboardPage.waitForDashboardWithDeletedParam();
 
-	    Assert.assertTrue(
-	            dashboardpage.isDeleteSuccessMessageDisplayed(),
-	            "Delete success message is not displayed."
-	    );
+	Assert.assertTrue(
+	        dashboardPage.isDeleteSuccessMessageDisplayed(),
+	        "Delete success message is not displayed."
+	);
 	}
+
+	// ---------------------------------------------------------
+	// Cancel deletion
+	// ---------------------------------------------------------
+
 	@Test
-	public void verifyNoResumeMessageDisplayed() {
+	public void verifyCancelDeleteResume() {
+		createFreshResume();
+		int before = dashboardPage.getResumeHistoryCount();
 
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.confirmDelete();
+		dashboardPage.clickDeleteResume();
+		dashboardPage.cancelDelete();
 
-	    Assert.assertEquals(
-	            dashboardpage.getNoResumeMessage(),
-	            "Upload Your First Resume"
-	    );
+		Assert.assertEquals(
+				dashboardPage.getResumeHistoryCount(),
+				before,
+				"Resume should not be deleted after cancelling."
+				);
 	}
+
+
+	// ---------------------------------------------------------
+	// State after deletion
+	// ---------------------------------------------------------
+
 	@Test
-	public void verifyUploadButtonDisplayedWhenNoResumeExists() {
+    public void verifyNoResumeMessageDisplayed() {
+        dashboardPage.deleteAllExistingResume();
+        Assert.assertEquals(
+                dashboardPage.getNoResumeMessage(),
+                "Upload Your First Resume",
+                "'No resume' message is not displayed correctly after deletion."
+        );
+    }
 
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.confirmDelete();
 
-	    Assert.assertTrue(
-	            dashboardpage.isUploadBtnDisplayed()
-	    );
-	}
 	@Test
-	public void verifyDashboardStatisticsResetAfterDelete() {
+    public void verifyUploadButtonDisplayedWhenNoResumeExists() {
+		dashboardPage.deleteAllExistingResume();
 
-	    dashboardpage.clickDeleteResume();
-	    dashboardpage.confirmDelete();
+        Assert.assertTrue(
+                dashboardPage.isUploadBtnDisplayed(),
+                "Upload button is not displayed after resume is deleted."
+        );
+    }
 
-	    Assert.assertEquals(
-	            dashboardpage.getTotalResumeCount(),
-	            "0"
-	    );
+	@Test
+    public void verifyDashboardStatisticsResetAfterDelete() {
 
-	    Assert.assertEquals(
-	            dashboardpage.getAverageScore(),
-	            "0%"
-	    );
+		dashboardPage.deleteAllExistingResume();
 
-	    Assert.assertEquals(
-	            dashboardpage.getBestScore(),
-	            "0%"
-	    );
+        Assert.assertEquals(
+                dashboardPage.getTotalResumeCount(),
+                "0",
+                "Total resume count is not reset after deletion."
+        );
 
-	    Assert.assertEquals(
-	            dashboardpage.getDomainsTried(),
-	            "0"
-	    );
-	}
+        Assert.assertEquals(
+                dashboardPage.getAverageScore(),
+                "0%",
+                "Average score is not reset after deletion."
+        );
+
+        Assert.assertEquals(
+                dashboardPage.getBestScore(),
+                "0%",
+                "Best score is not reset after deletion."
+        );
+
+        Assert.assertEquals(
+                dashboardPage.getDomainsTried(),
+                "0",
+                "Domains tried count is not reset after deletion."
+        );
+    }
 }

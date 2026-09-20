@@ -3,6 +3,7 @@ package com.resumeanalyzer.ResumeAnalyzerAutomation.pages;
 import java.io.File;
 import java.io.IOException;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -66,15 +67,27 @@ public class JdMatchResultPage extends BasePage {
 
     @FindBy(id = "download-full-report-btn")
     private WebElement bottomDownloadBtn;
+    
+//	  =====================
+//	  Methods
+//	  =====================
+    
+    private boolean isVisible(String id) {
+        boolean result = isDisplayedSafely(By.id(id), 30);
+        if (!result) {
+            checkForGroqFailure();
+        }
+        return result;
+    }
 
 //	  =====================
 //	  Navigation
 //	  =====================
     
     public HomePage clickAnalyzeAnotherResume() {
-        scrollToElement(analyzeAnotherResumeBtn);
-        click(analyzeAnotherResumeBtn);
-        return new HomePage(driver);
+    	    click(analyzeAnotherResumeBtn);
+
+    	    return new HomePage(driver);
     }
     
 //	  =====================
@@ -88,6 +101,10 @@ public class JdMatchResultPage extends BasePage {
     public File clickBottomDownloadReport() throws IOException {
     	scrollToElement(bottomDownloadBtn);
     	return clickDownloadReport(bottomDownloadBtn);
+    }
+    
+    public void waitForPageToLoad() {
+        waitForVisibility(matchResultHeader,30);
     }
     
 //	  =====================
@@ -132,45 +149,40 @@ public class JdMatchResultPage extends BasePage {
 //	  =====================
 
     public boolean isPageLoaded() {
-    	return isDisplayed(matchResultHeader)
-    	        && isDisplayed(matchScoreCard)
-    	        && isDisplayed(matchPercentage)
-    	        && isDisplayed(progressBar)
-    	        && isDisplayed(feedbackCard)
-    	        && isDisplayed(analyzeAnotherResumeBtn);
+        return isVisible("jdMatchResult");
     }
 
     public boolean isMatchScoreCardDisplayed() {
-        return isDisplayed(matchScoreCard);
+        return isVisible("match-score-card");
     }
 
     public boolean isMatchPercentageDisplayed() {
-        return isDisplayed(matchPercentage);
+        return isVisible("match-percentage-value");
     }
 
     public boolean isProgressBarDisplayed() {
-        return isDisplayed(progressBar);
+    	return isVisible("match-percentage-progress-bar");
     }
 
     public boolean isMatchedSkillsDisplayed() {
-        return isDisplayed(matchedSkills);
+        return isVisible("match-matched-skills-block");
     }
 
     public boolean isMissingSkillsDisplayed() {
-        return isDisplayed(missingSkills);
+        return isVisible("match-missing-skills-block");
     }
 
     public boolean isFeedbackCardDisplayed() {
-        return isDisplayed(feedbackCard);
+        return isVisible("ai-feedback-card");
     }
 
     public boolean isAIRewriterDisplayed() {
-        return isDisplayed(aiRewriterCard);
+        return isVisible("ai-rewriter-card");
     }
 
     public boolean isSuggestionsCardDisplayed() {
-        return isDisplayed(suggestionCard);
-    } 
+        return isVisible("suggestions-card");
+    }
     
     public boolean isDownloadButtonsDisplayed() {
     	return isTopDownloadButtonDisplayed()
@@ -178,14 +190,14 @@ public class JdMatchResultPage extends BasePage {
     }
     
     public boolean isTopDownloadButtonDisplayed() {
-        return isDisplayed(topDownloadReportBtn);
+        return isVisible("download-pdf-report-top-btn");
     }
 
     public boolean isBottomDownloadButtonDisplayed() {
-        return isDisplayed(bottomDownloadBtn);
+        return isVisible("download-full-report-btn");
     }
-    
+
     public boolean isAnalyzeAnotherResumeButtonDisplayed() {
-        return isDisplayed(analyzeAnotherResumeBtn);
+        return isVisible("analyze-another-resume-btn");
     }
 }

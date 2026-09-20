@@ -4,12 +4,13 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.resumeanalyzer.ResumeAnalyzerAutomation.components.NavbarComponent;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.DashboardPage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.HomePage;
 import com.resumeanalyzer.ResumeAnalyzerAutomation.pages.LoginPage;
 
 import base.BaseTest;
-import components.NavbarComponent;
+import constants.TestData;
 
 public class DashboardResumeHistoryTest extends BaseTest {
 
@@ -18,11 +19,11 @@ public class DashboardResumeHistoryTest extends BaseTest {
 	DashboardPage dashboardpage;
 	NavbarComponent navbar;
 
-	String email = "test11@gmail.com";
-	String password = "MyStr0ng@Pass!";
+	String email = TestData.VALID_EMAIL;
+	String password = TestData.VALID_PASSWORD;
 	String resumePath;
 
-	@BeforeMethod
+	@BeforeMethod(alwaysRun = true)
 	public void init() {
 		homepage = new HomePage(driver);
 		loginpage = new LoginPage(driver);
@@ -30,25 +31,28 @@ public class DashboardResumeHistoryTest extends BaseTest {
 		navbar = new NavbarComponent(driver);
 
 		resumePath = System.getProperty("user.dir")
-				+ "/src/test/resources/TestData/Pushpak_Pranav_QA_Resume.docx";
+				+ "/src/test/resources/TestData/TestResume1.pdf";
 
 		homepage.clickLogin();
-		loginpage.loginWithCredentials(email, password);
-		if (!dashboardpage.isResumePresent()) {
+		loginpage.loginAsValidUser(email, password);
+		loginpage.waitForDashboard();
+		if (!dashboardpage.hasResumeHistory()) {
 
 	        navbar.clickHome();
 
 	        homepage.clickUploadForm();
 	        homepage.selectFile(resumePath);
 	        homepage.clickAnalyzeBtn();
+	        homepage.waitForAtsResultPage();
 
 	        navbar.clickDashboard();
 		}
 	}
+	
 	@Test
 	public void verifyResumePresentOnDashboard() {
 	    Assert.assertTrue(
-	            dashboardpage.isResumePresent(),
+	            dashboardpage.hasResumeHistory(),
 	            "No resume is present in Resume History."
 	    );
 	}
@@ -58,7 +62,7 @@ public class DashboardResumeHistoryTest extends BaseTest {
 
 	    Assert.assertEquals(
 	            dashboardpage.getResumeFileName(),
-	            "Pushpak_Pranav_QA_Resume.docx"
+	            "TestResume1.pdf"
 	    );
 	}
 	@Test
@@ -95,6 +99,7 @@ public class DashboardResumeHistoryTest extends BaseTest {
 		homepage.clickUploadForm();
 		homepage.selectFile(resumePath);
 		homepage.clickAnalyzeBtn();
+		homepage.waitForAtsResultPage();
 
 		navbar.clickDashboard();
 

@@ -4,6 +4,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.By;
 
 public class AtsResultPage extends BasePage{
 	public AtsResultPage(WebDriver driver) {
@@ -42,7 +43,7 @@ public class AtsResultPage extends BasePage{
 	@FindBy(id ="ats-missing-skills-block")
 	private WebElement atsMissingSkillsBlock;
 
-	@FindBy(id = "ats-score-progress")
+	@FindBy(id = "ats-score-progress-bar")
 	private WebElement atsScoreProgressBar;
 
 	@FindBy(id="ai-summary-block")
@@ -63,10 +64,19 @@ public class AtsResultPage extends BasePage{
 	@FindBy(id="upload-another-link")
 	private WebElement uploadAnotherBtn;
 	
+	@FindBy(id="jd-error-alert") 
+	private WebElement jdErrorAlert;
+	
 //	  =====================
 //	  Methods
 //	  =====================
-	
+	private boolean isVisible(String id) {
+	    boolean result = isDisplayedSafely(By.id(id), 30);
+	    if (!result) {
+	        checkForGroqFailure();
+	    }
+	    return result;
+	}
 //	  =====================
 //	  Navigations
 //	  =====================
@@ -100,14 +110,14 @@ public class AtsResultPage extends BasePage{
 //	  =====================
 	
 	public String getResumeFileName() {
-		return getText(resumeFileName);
+		return getText(resumeFileName).trim();
 	}
 	
 	public String getDetectedDomain() {
 		return getText(detectedDomain);
 	}
 	
-	public int getAtsScoreValue() {
+	public double getAtsScoreValue() {
 		return getPercentage(atsScoreValue);
 	}
 	
@@ -132,13 +142,21 @@ public class AtsResultPage extends BasePage{
 	}
 	
 	public String getProgressBarValue() {
-	    return getAttribute(atsScoreProgressBar, "aria-valuenow");
+	    String style = getAttribute(atsScoreProgressBar, "style");
+	    return style.replaceAll(".*width:\\s*([0-9.]+)%;.*", "$1");
 	}
 	
 	public int getAtsMatchedCount() {
 	    return Integer.parseInt(getText(atsMatchedCount));
 	}
 	
+	public String getJdErrorMessage() {
+	    return getText(jdErrorAlert);
+	}
+
+	public String getJdValidationMessage() {
+	    return getAttribute(jdTextArea, "validationMessage");
+	}
 	
 	
 	
@@ -154,50 +172,51 @@ public class AtsResultPage extends BasePage{
 	}
 	
 	public boolean isMainNavbarDisplayed() {
-		return isDisplayed(mainNavbar);
+	    return isVisible("main-navbar");
 	}
 	
 	public boolean isDetectedDomainDisplayed() {
-		return isDisplayed(detectedDomain);	
+	    return isVisible("detected-domain-badge");
 	}
-	
+
 	public boolean isAtsScoreValueDisplayed() {
-		return isDisplayed(atsScoreValue);
+	    return isVisible("ats-score-value");
 	}
-	
+
 	public boolean isAtsGradeValueDisplayed() {
-		return isDisplayed(atsGradeValue);
+	    return isVisible("ats-grade-value");
 	}
 	
 	public boolean isAtsMatchedCountDisplayed() {
-		return isDisplayed(atsMatchedCount);
+	    return isVisible("ats-matched-count");
 	}
 	
 	public boolean isAtsMatchedSkillsBlockDisplayed() {
-		return isDisplayed(atsMatchedSkillsBlock);
+	    return isVisible("ats-matched-skills-block");
 	}
 	
 	public boolean isAtsMissingCountDisplayed() {
-		return isDisplayed(atsMissingCount);
+	    return isVisible("ats-missing-count");
 	}
 	
 	public boolean isAtsMissingSkillsBlockDisplayed() {
-		return isDisplayed(atsMissingSkillsBlock);
+	    return isVisible("ats-missing-skills-block");
 	}
 	
 	public boolean isAtsScoreProgressBarDisplayed() {
-		return isDisplayed(atsScoreProgressBar);
+	    return isVisible("ats-score-progress-bar");
 	}
+	
 	public boolean isAiSummaryDisplayed() {
-	    return isDisplayed(aiSummaryText);
+	    return isVisible("ai-summary-text");
 	}
 	
 	public boolean isAiSummaryBlockDisplayed() {
-		return isDisplayed(aiSummaryBlock);
+	    return isVisible("ai-summary-block");
 	}
 	
 	public boolean isJDMatchFormDisplayed() {
-		return isDisplayed(jdFormBlock);
+	    return isVisible("jd-match-form-card");
 	}
 	
 	public boolean isJDTextAreaEnabled() {
@@ -209,11 +228,21 @@ public class AtsResultPage extends BasePage{
 	}
 	
 	public boolean isJdAnalyzeBtnDisplayed() {
-		return isDisplayed(jdAnalyzeBtn);
+	    return isVisible("jd-btn");
 	}
 	
 	public boolean isUploadAnotherBtnDisplayed() {
-		return isDisplayed(uploadAnotherBtn);
+	    return isVisible("upload-another-link");
+	}
+
+	public void waitForJdPage() {
+		waitForURLContains("analysis/match",30);
+		
 	}	
+	
+	public boolean isJdErrorDisplayed() {
+	    return isDisplayedSafely(By.id("jd-error-alert"), 10);
+	}
+	
 
 }

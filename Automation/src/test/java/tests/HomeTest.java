@@ -19,6 +19,7 @@ public class HomeTest extends BaseTest {
 
 	HomePage homepage;
 	NavbarComponent navbar;
+	LoginPage loginPage;
 
 	private DashboardPage loginAsValidUser() {
 
@@ -36,12 +37,14 @@ public class HomeTest extends BaseTest {
 		homepage.loginAndGoHome(
 				TestData.VALID_EMAIL,
 				TestData.VALID_PASSWORD);
+		
 	}
 
-	@BeforeMethod 
+	@BeforeMethod(alwaysRun= true)
 	public void init() {
 		homepage = new HomePage(driver);
 		navbar = new NavbarComponent(driver);
+		loginPage = new LoginPage(driver);
 	}
 
 
@@ -98,7 +101,7 @@ public class HomeTest extends BaseTest {
 		);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyLoginNavigation() {
 
 		homepage.clickLogin();
@@ -108,7 +111,7 @@ public class HomeTest extends BaseTest {
 			);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifySignupNavigation() {
 
 		homepage.clickSignUp();
@@ -154,7 +157,7 @@ public class HomeTest extends BaseTest {
 				);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyDashboardDisplayedAfterLogin() {
 		loginAsValidUser();
 		Assert.assertTrue(
@@ -173,7 +176,7 @@ public class HomeTest extends BaseTest {
 				);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyLogoutRedirectsToLoginSignup() {
 		performLogin();
 		navbar.clickAvatar();
@@ -195,7 +198,7 @@ public class HomeTest extends BaseTest {
 	// ---------------------------------------------------------
 
 	@Test
-	public void verifyHomeNavigationFromDashboard() throws InterruptedException {
+	public void verifyHomeNavigationFromDashboard() {
 		performLogin();
 		Assert.assertTrue(
 				homepage.isUploadFormDisplayed(),
@@ -208,7 +211,7 @@ public class HomeTest extends BaseTest {
 	// Resume Upload Form tests
 	// ---------------------------------------------------------
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyUploadFormDisplayed() {
 		Assert.assertTrue(
 				homepage.isUploadFormDisplayed(),
@@ -236,21 +239,21 @@ public class HomeTest extends BaseTest {
 
 	@Test
 	public void verifySelectedFileNameDisplayed() {
-		homepage.selectFile(TestData.STRONG_RESUME);
+		homepage.selectFile(TestData.TEST_RESUME1);
 
 		Assert.assertEquals(
 				homepage.getSelectedFileName(),
-				"StrongResume.pdf",
+				"TestResume1.pdf",
 				"Selected file name is not displayed correctly."
 				);
 	}
 
 	@Test
 	public void verifySelectedFileReplaced() {
-		homepage.selectFile(TestData.STRONG_RESUME);
+		homepage.selectFile(TestData.TEST_RESUME1);
 		String firstFile = homepage.getSelectedFileName();
 
-		homepage.selectFile(TestData.PERFECT_MATCH_RESUME);
+		homepage.selectFile(TestData.TEST_RESUME2);
 		String secondFile = homepage.getSelectedFileName();
 
 		Assert.assertNotEquals(
@@ -261,7 +264,7 @@ public class HomeTest extends BaseTest {
 
 		Assert.assertEquals(
 				secondFile,
-				"PerfectMatchResume.pdf",
+				"TestResume2.pdf",
 				"Displayed file name is incorrect."
 				);
 	}
@@ -287,22 +290,22 @@ public class HomeTest extends BaseTest {
 				);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyAnalyzeButtonEnabledAfterFileSelection() {
-		homepage.selectFile(TestData.STRONG_RESUME);
+		homepage.selectFile(TestData.TEST_RESUME1);
 		Assert.assertTrue(
 				homepage.isAnalyzeBtnEnabled(),
 				"Analyze button did not become enabled after selecting a valid resume."
 				);
 	}
 
-	@Test
+	@Test(groups = {"smoke"})
 	public void verifyAnalyzeButtonNavigatesToResultsAfterFileSelection() {
-		homepage.selectFile(TestData.STRONG_RESUME);
+		homepage.selectFile(TestData.TEST_RESUME1);
 		homepage.clickAnalyzeBtn();
 		Assert.assertTrue(
-				driver.getCurrentUrl().contains("/resume/upload"),
-				"User is not navigated to ATS Result page after clicking Analyze."
+				homepage.waitForAtsResultPage(),
+	            "User is not navigated to ATS Result page after clicking Analyze."
 				);
 	}
 
