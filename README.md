@@ -23,13 +23,13 @@ AI-ResumeAnalyzer-QA/
 ├── Automation/                    # Selenium + TestNG automation framework
 │   ├── src/main/java/             # Page Objects, components, DriverFactory, WaitUtils
 │   ├── src/test/java/
-│   │   ├── tests/                 # 21 test classes (211 tests)
+│   │   ├── tests/                 # 20 test classes (211 tests)
 │   │   ├── base/                  # BaseTest — generic driver/config setup
 │   │   ├── constants/             # TestData — centralized test data & expected values
 │   │   ├── listeners/             # ScreenshotListener — auto-capture on failure
 │   │   └── apitests/              # REST-assured API tests (separate scope)
 │   ├── src/test/resources/        # config.properties, test data files, log4j2
-│   ├── testng.xml                 # Full regression suite (211 tests)
+│   ├── testng-regression.xml      # Full regression suite (211 tests)
 │   ├── testng-smoke.xml           # Smoke suite (24 critical-path tests)
 │   └── pom.xml
 ├── Documentation/
